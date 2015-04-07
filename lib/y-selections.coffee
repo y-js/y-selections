@@ -17,13 +17,17 @@ class YSelections
     # TODO: currently, applies the delta _as is_.
     from = @_model.HB.getOperation delta.from
     to = @_model.HB.getOperation delta.to
-    createSelection: (from, to, attrs)->
-      return
+    createSelection = (from, to, attrs)->
+      new_attrs = {}
+      for n,v of attrs
+        new_attrs[n] = v
+      {
         from: from
         to: to
-        attrs: attrs
+        attrs: new_attrs
+      }
 
-    extendSelection: (selection, attrs)->
+    extendSelection = (selection, attrs)->
       for n,v of attrs
         selection.attrs[n] = v
 
@@ -35,44 +39,79 @@ class YSelections
       # 2. cut off the selection that intersects with to
       # 3. extend / add selections in between
 
-      # e.g.           from     , "from"        , "prev_cl", "to"
-      cut_selection : (reference, reference_name, direction, opposite_reference_name)->
+      # e.g.           from     , "from"        , "prev_cl", "next_cl"         , to                , "to"
+      cut_selection = (reference, reference_name, direction, opposite_direction, opposite_reference, opposite_reference_name)->
         if reference.selection? and reference.selection[reference_name] is reference
+          # does not intersect, because the start is already selected
           return
         o = reference[direction]
         while (not o.selection?) and (o.type isnt "Delimiter")
           o = o[direction]
         if (not o.selection?) or o.selection[opposite_reference_name] is o
+          # no intersection
           return
+
+        # this is a reference for the selections that are created:
+        # old is outer (not between $from $to)
+        # new is inner (inbetween $from $to)
+        # opt is outer in opposite_direction
+        #
         old_selection = o.selection
-        new_selection = createSelection old_selection.from, reference[direction], delta.attrs
-        
 
-      left_sel = null
-      right_sel = null
-
-      # 1. check if there is a selection to the left
-      left_sel = from
-      while (not from_left_sel.selection?) and (from_left_sel.type isnt "Delimiter")
-        from_left_sel = from_left_sel.prev_cl
-      # 2. check if there is a selection to the right
-      right_sel = to
-      while (not from_right_sel.selection?) and (from_right_sel isnt to)
-        from_right_sel = from_right_sel.next_cl
-
-      if (from_left_sel.selection.to is from_left_sel) or (from_left_sel.type is "Delimiter")
-        # from_left_sel is the end of an selection (or no selection), and there is no intersection to the left
-        if from_right_sel.selection is to
-          # No intersection!
-          from.selection = selection
-          to.selection = selection
+        # check if found selection intersects with opposite_reference
+        o = reference
+        while (not o.selection?) and (o isnt opposite_reference)
+          o = o[direction]
+        if o is old_selection[opposite_reference_name]
+          # no intersection with opposite_reference!
+          # create new selection
+          new_selection = createSelection reference, old_selection[opposite_reference_name], old_selection.attrs
+          extendSelection new_selection, delta.attrs
+          # update old selection
+          old_selection[opposite_reference_name] = reference[direction]
+          # update references
+          old_selection[opposite_reference_name].selection = old_selection
+          new_selection[reference_name].selection = new_selection
+          new_selection[opposite_reference_name].selection = new_selection
         else
-          # the right part of this selection intersects with another selection
-          selection.to = from_right_sel.prev_cl
-      else
-        
-      from.selection = selection
-      to.selection = selection
+          # there is an intersection with opposite_reference!
+          # create new selection
+          new_selection = createSelection reference, opposite_reference, old_selection.attrs
+          extendSelection new_selection, delta.attrs
+          opt_selection = createSelection opposite_reference[opposite_direction], old_selection[opposite_reference_name], old_selection.attrs
+          # update old selection
+          old_selection[opposite_reference_name] = reference[direction]
+          # update references
+          old_selection[opposite_reference_name].selection = old_selection
+          new_selection[reference_name].selection = new_selection
+          new_selection[opposite_reference_name].selection = new_selection
+          opt_selection[reference_name].selection = opt_selection
+          opt_selection[opposite_reference_name].selection = opt_selection
+
+      # 1. cut off the selection that intersects with from
+      # e.g.           from     , "from"        , "prev_cl", "next_cl"         , to                , "to"
+      cut_selection : (reference, reference_name, direction, opposite_direction, opposite_reference, opposite_reference_name)->
+      cut_selection(from, "from", "prev_cl", "next_cl", to  , "to")
+      # 2. cut off the selection that intersects with to
+      cut_selection(to  , "to"  , "next_cl", "prev_cl", from, "from")
+      # 3. extend / add selections in between
+      o = from
+      while o isnt to.next_cl
+        if o.selection?
+          # just extend the existing selection
+          extendSelection o.selection, delta.attrs
+          o = o.selection.to.next_cl
+        else
+          # create a new selection (until you find the next one)
+          start = o
+          while o isnt to
+            o = o.next_cl
+          end = o
+          selection = createSelection start, end, delta.attrs
+          start.selection = selection
+          end.selection = selection
+          o = o.next_cl
+
     else if delta.type is "unselect"
       # ..
     else

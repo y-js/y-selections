@@ -17,40 +17,93 @@ YSelections = (function() {
   };
 
   YSelections.prototype._apply = function(delta) {
-    var from, from_left_sel, from_right_sel, left_sel, right_sel, selection, to;
+    var createSelection, cut_selection, end, extendSelection, from, o, selection, start, to;
     from = this._model.HB.getOperation(delta.from);
     to = this._model.HB.getOperation(delta.to);
-    selection = {
-      from: from,
-      to: to,
-      attr: delta.attr
+    createSelection = function(from, to, attrs) {
+      var n, new_attrs, v;
+      new_attrs = {};
+      for (n in attrs) {
+        v = attrs[n];
+        new_attrs[n] = v;
+      }
+      return {
+        from: from,
+        to: to,
+        attrs: new_attrs
+      };
+    };
+    extendSelection = function(selection, attrs) {
+      var n, results, v;
+      results = [];
+      for (n in attrs) {
+        v = attrs[n];
+        results.push(selection.attrs[n] = v);
+      }
+      return results;
     };
     if (!((from != null) && (to != null))) {
       console.log("wasn't able to apply the selection..");
     }
     if (delta.type === "select") {
-      left_sel = null;
-      right_sel = null;
-      left_sel = from;
-      while ((from_left_sel.selection == null) && (from_left_sel.type !== "Delimiter")) {
-        from_left_sel = from_left_sel.prev_cl;
-      }
-      right_sel = to;
-      while ((from_right_sel.selection == null) && (from_right_sel !== to)) {
-        from_right_sel = from_right_sel.next_cl;
-      }
-      if ((from_left_sel.selection.to === from_left_sel) || (from_left_sel.type === "Delimiter")) {
-        if (from_right_sel.selection === to) {
-          from.selection = selection;
-          to.selection = selection;
-        } else {
-          selection.to = from_right_sel.prev_cl;
+      cut_selection = function(reference, reference_name, direction, opposite_direction, opposite_reference, opposite_reference_name) {
+        var new_selection, o, old_selection, opt_selection;
+        if ((reference.selection != null) && reference.selection[reference_name] === reference) {
+          return;
         }
-      } else {
-
+        o = reference[direction];
+        while ((o.selection == null) && (o.type !== "Delimiter")) {
+          o = o[direction];
+        }
+        if ((o.selection == null) || o.selection[opposite_reference_name] === o) {
+          return;
+        }
+        old_selection = o.selection;
+        o = reference;
+        while ((o.selection == null) && (o !== opposite_reference)) {
+          o = o[direction];
+        }
+        if (o === old_selection[opposite_reference_name]) {
+          new_selection = createSelection(reference, old_selection[opposite_reference_name], old_selection.attrs);
+          extendSelection(new_selection, delta.attrs);
+          old_selection[opposite_reference_name] = reference[direction];
+          old_selection[opposite_reference_name].selection = old_selection;
+          new_selection[reference_name].selection = new_selection;
+          return new_selection[opposite_reference_name].selection = new_selection;
+        } else {
+          new_selection = createSelection(reference, opposite_reference, old_selection.attrs);
+          extendSelection(new_selection, delta.attrs);
+          opt_selection = createSelection(opposite_reference[opposite_direction], old_selection[opposite_reference_name], old_selection.attrs);
+          old_selection[opposite_reference_name] = reference[direction];
+          old_selection[opposite_reference_name].selection = old_selection;
+          new_selection[reference_name].selection = new_selection;
+          new_selection[opposite_reference_name].selection = new_selection;
+          opt_selection[reference_name].selection = opt_selection;
+          return opt_selection[opposite_reference_name].selection = opt_selection;
+        }
+      };
+      ({
+        cut_selection: function(reference, reference_name, direction, opposite_direction, opposite_reference, opposite_reference_name) {}
+      });
+      cut_selection(from, "from", "prev_cl", "next_cl", to, "to");
+      cut_selection(to, "to", "next_cl", "prev_cl", from, "from");
+      o = from;
+      while (o !== to.next_cl) {
+        if (o.selection != null) {
+          extendSelection(o.selection, delta.attrs);
+          o = o.selection.to.next_cl;
+        } else {
+          start = o;
+          while (o !== to) {
+            o = o.next_cl;
+          }
+          end = o;
+          selection = createSelection(start, end, delta.attrs);
+          start.selection = selection;
+          end.selection = selection;
+          o = o.next_cl;
+        }
       }
-      from.selection = selection;
-      to.selection = selection;
     } else if (delta.type === "unselect") {
 
     } else {
@@ -76,23 +129,23 @@ YSelections = (function() {
     }
   };
 
-  YSelections.prototype.select = function(from, to, attribute) {
+  YSelections.prototype.select = function(from, to, attrs) {
     var delta;
     delta = {
       from: from.getUid(),
       to: to.getUid(),
-      attr: attribute,
+      attrs: attrs,
       type: "select"
     };
     return this._model.applyDelta(delta);
   };
 
-  YSelections.prototype.unselect = function(from, to, attribute) {
+  YSelections.prototype.unselect = function(from, to, attrs) {
     var delta;
     delta = {
       from: from.getUid(),
       to: to.getUid(),
-      attr: attribute,
+      attrs: attrs,
       type: "unselect"
     };
     return this._model.applyDelta(delta);
