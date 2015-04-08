@@ -17,7 +17,7 @@ YSelections = (function() {
   };
 
   YSelections.prototype._apply = function(delta) {
-    var createSelection, cut_selection, end, extendSelection, from, o, selection, start, to;
+    var count, createSelection, cut_selection, end, extendSelection, from, o, selection, start, to;
     from = this._model.HB.getOperation(delta.from);
     to = this._model.HB.getOperation(delta.to);
     createSelection = function(from, to, attrs) {
@@ -64,16 +64,28 @@ YSelections = (function() {
           o = o[direction];
         }
         if (o === old_selection[opposite_reference_name]) {
-          new_selection = createSelection(reference, old_selection[opposite_reference_name], old_selection.attrs);
+          if (opposite_reference_name === "to") {
+            new_selection = createSelection(reference, old_selection[opposite_reference_name], old_selection.attrs);
+          } else {
+            new_selection = createSelection(old_selection[opposite_reference_name], reference, old_selection.attrs);
+          }
           extendSelection(new_selection, delta.attrs);
           old_selection[opposite_reference_name] = reference[direction];
           old_selection[opposite_reference_name].selection = old_selection;
           new_selection[reference_name].selection = new_selection;
           return new_selection[opposite_reference_name].selection = new_selection;
         } else {
-          new_selection = createSelection(reference, opposite_reference, old_selection.attrs);
+          if (opposite_reference_name === "to") {
+            new_selection = createSelection(reference, opposite_reference, old_selection.attrs);
+          } else {
+            new_selection = createSelection(opposite_reference, reference, old_selection.attrs);
+          }
           extendSelection(new_selection, delta.attrs);
-          opt_selection = createSelection(opposite_reference[opposite_direction], old_selection[opposite_reference_name], old_selection.attrs);
+          if (opposite_reference_name === "to") {
+            opt_selection = createSelection(opposite_reference[opposite_direction], old_selection[opposite_reference_name], old_selection.attrs);
+          } else {
+            opt_selection = createSelection(old_selection[opposite_reference_name], opposite_reference[opposite_direction], old_selection.attrs);
+          }
           old_selection[opposite_reference_name] = reference[direction];
           old_selection[opposite_reference_name].selection = old_selection;
           new_selection[reference_name].selection = new_selection;
@@ -88,7 +100,9 @@ YSelections = (function() {
       cut_selection(from, "from", "prev_cl", "next_cl", to, "to");
       cut_selection(to, "to", "next_cl", "prev_cl", from, "from");
       o = from;
-      while (o !== to.next_cl) {
+      count = 0;
+      while ((o !== to.next_cl) || count > 10) {
+        count++;
         if (o.selection != null) {
           extendSelection(o.selection, delta.attrs);
           o = o.selection.to.next_cl;

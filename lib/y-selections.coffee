@@ -60,12 +60,22 @@ class YSelections
 
         # check if found selection intersects with opposite_reference
         o = reference
+        count = 0
         while (not o.selection?) and (o isnt opposite_reference)
+          if count > 20
+            console.log "debug2: could complete this circle.."
+            break
+          else
+            count++
           o = o[direction]
         if o is old_selection[opposite_reference_name]
           # no intersection with opposite_reference!
           # create new selection
-          new_selection = createSelection reference, old_selection[opposite_reference_name], old_selection.attrs
+          if opposite_reference_name is "to"
+            new_selection = createSelection reference, old_selection[opposite_reference_name], old_selection.attrs
+          else
+            new_selection = createSelection old_selection[opposite_reference_name], reference, old_selection.attrs
+
           extendSelection new_selection, delta.attrs
           # update old selection
           old_selection[opposite_reference_name] = reference[direction]
@@ -76,9 +86,17 @@ class YSelections
         else
           # there is an intersection with opposite_reference!
           # create new selection
-          new_selection = createSelection reference, opposite_reference, old_selection.attrs
+          if opposite_reference_name is "to"
+            new_selection = createSelection reference, opposite_reference, old_selection.attrs
+          else
+            new_selection = createSelection opposite_reference, reference, old_selection.attrs
+
           extendSelection new_selection, delta.attrs
-          opt_selection = createSelection opposite_reference[opposite_direction], old_selection[opposite_reference_name], old_selection.attrs
+          if opposite_reference_name is "to"
+            opt_selection = createSelection opposite_reference[opposite_direction], old_selection[opposite_reference_name], old_selection.attrs
+          else
+            opt_selection = createSelection old_selection[opposite_reference_name], opposite_reference[opposite_direction], old_selection.attrs
+
           # update old selection
           old_selection[opposite_reference_name] = reference[direction]
           # update references
@@ -96,15 +114,28 @@ class YSelections
       cut_selection(to  , "to"  , "next_cl", "prev_cl", from, "from")
       # 3. extend / add selections in between
       o = from
-      while o isnt to.next_cl
+      count = 0
+      while (o isnt to.next_cl)
+        if count > 20
+          console.log "debug3: could complete this circle.."
+          break
+        else
+          count++
         if o.selection?
+          console.log('deb3: ext..')
           # just extend the existing selection
           extendSelection o.selection, delta.attrs
           o = o.selection.to.next_cl
         else
           # create a new selection (until you find the next one)
+          console.log('deb3: ext..')
           start = o
           while o isnt to
+            if count > 20
+              console.log "debug1: could complete this circle.."
+              break
+            else
+              count++
             o = o.next_cl
           end = o
           selection = createSelection start, end, delta.attrs
