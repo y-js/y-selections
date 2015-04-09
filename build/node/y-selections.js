@@ -17,7 +17,7 @@ YSelections = (function() {
   };
 
   YSelections.prototype._apply = function(delta) {
-    var count, createSelection, cut_selection, end, extendSelection, from, o, selection, start, to;
+    var createSelection, cut_off_from, cut_off_to, end, extendSelection, from, o, selection, start, to;
     from = this._model.HB.getOperation(delta.from);
     to = this._model.HB.getOperation(delta.to);
     createSelection = function(from, to, attrs) {
@@ -46,69 +46,74 @@ YSelections = (function() {
       console.log("wasn't able to apply the selection..");
     }
     if (delta.type === "select") {
-      cut_selection = function(reference, reference_name, direction, opposite_direction, opposite_reference, opposite_reference_name) {
+      cut_off_from = function() {
         var new_selection, o, old_selection, opt_selection;
-        if ((reference.selection != null) && reference.selection[reference_name] === reference) {
+        if ((from.selection != null) && from.selection.from === from) {
           return;
         }
-        o = reference[direction];
+        o = from.prev_cl;
         while ((o.selection == null) && (o.type !== "Delimiter")) {
-          o = o[direction];
+          o = o.prev_cl;
         }
-        if ((o.selection == null) || o.selection[opposite_reference_name] === o) {
+        if ((o.selection == null) || o.selection["to"] === o) {
           return;
         }
         old_selection = o.selection;
-        o = reference;
-        while ((o.selection == null) && (o !== opposite_reference)) {
-          o = o[direction];
+        o = from;
+        while ((o !== old_selection.to) && (o !== to)) {
+          o = o.next_cl;
         }
-        if (o === old_selection[opposite_reference_name]) {
-          if (opposite_reference_name === "to") {
-            new_selection = createSelection(reference, old_selection[opposite_reference_name], old_selection.attrs);
-          } else {
-            new_selection = createSelection(old_selection[opposite_reference_name], reference, old_selection.attrs);
-          }
+        if (o === old_selection.to) {
+          new_selection = createSelection(from, old_selection.to, old_selection.attrs);
           extendSelection(new_selection, delta.attrs);
-          old_selection[opposite_reference_name] = reference[direction];
-          old_selection[opposite_reference_name].selection = old_selection;
-          new_selection[reference_name].selection = new_selection;
-          return new_selection[opposite_reference_name].selection = new_selection;
+          old_selection.to = from.prev_cl;
+          old_selection.to.selection = old_selection;
+          new_selection.from.selection = new_selection;
+          return new_selection.to.selection = new_selection;
         } else {
-          if (opposite_reference_name === "to") {
-            new_selection = createSelection(reference, opposite_reference, old_selection.attrs);
-          } else {
-            new_selection = createSelection(opposite_reference, reference, old_selection.attrs);
-          }
+          new_selection = createSelection(from, to, old_selection.attrs);
           extendSelection(new_selection, delta.attrs);
-          if (opposite_reference_name === "to") {
-            opt_selection = createSelection(opposite_reference[opposite_direction], old_selection[opposite_reference_name], old_selection.attrs);
-          } else {
-            opt_selection = createSelection(old_selection[opposite_reference_name], opposite_reference[opposite_direction], old_selection.attrs);
-          }
-          old_selection[opposite_reference_name] = reference[direction];
-          old_selection[opposite_reference_name].selection = old_selection;
-          new_selection[reference_name].selection = new_selection;
-          new_selection[opposite_reference_name].selection = new_selection;
-          opt_selection[reference_name].selection = opt_selection;
-          return opt_selection[opposite_reference_name].selection = opt_selection;
+          opt_selection = createSelection(to.next_cl, old_selection.to, old_selection.attrs);
+          old_selection.to = from.prev_cl;
+          old_selection.to.selection = old_selection;
+          new_selection.from.selection = new_selection;
+          new_selection.to.selection = new_selection;
+          opt_selection.from.selection = opt_selection;
+          return opt_selection.to.selection = opt_selection;
         }
       };
-      ({
-        cut_selection: function(reference, reference_name, direction, opposite_direction, opposite_reference, opposite_reference_name) {}
-      });
-      cut_selection(from, "from", "prev_cl", "next_cl", to, "to");
-      cut_selection(to, "to", "next_cl", "prev_cl", from, "from");
+      cut_off_from();
+      cut_off_to = function() {
+        var new_selection, o, old_selection;
+        if ((to.selection != null) && from.selection.to === to) {
+          return;
+        }
+        o = to.prev_cl;
+        while ((o.selection == null) && (o !== from)) {
+          o = o.prev_cl;
+        }
+        if ((o.selection == null) || o.selection["to"] === o) {
+          return;
+        }
+        old_selection = o.selection;
+        new_selection = createSelection(old_selection.from, to, old_selection.attrs);
+        extendSelection(new_selection, delta.attrs);
+        old_selection.from = to.next_cl;
+        old_selection.to.selection = old_selection;
+        new_selection.from.selection = new_selection;
+        return new_selection.to.selection = new_selection;
+      };
+      cut_off_to();
       o = from;
-      count = 0;
-      while ((o !== to.next_cl) || count > 10) {
-        count++;
+      while (o !== to.next_cl) {
         if (o.selection != null) {
+          console.log("1");
           extendSelection(o.selection, delta.attrs);
           o = o.selection.to.next_cl;
         } else {
+          console.log("2");
           start = o;
-          while (o !== to) {
+          while ((o.next_cl.selection == null) && (o !== to)) {
             o = o.next_cl;
           }
           end = o;

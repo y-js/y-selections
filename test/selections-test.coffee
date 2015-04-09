@@ -47,7 +47,7 @@ describe "Selections Test", ->
     l_left = l.ref(1)
     l_right = l.ref(2)
     sel = @yTest.users[0].val("selections")
-    sel.select(l_left, l_right, "my_attr")
+    sel.select(l_left, l_right, {"my_attr":"black"})
     expect(l.ref(1).selection.from).to.equal(l.ref(1))
     expect(l.ref(1).selection.to).to.equal(l.ref(2))
     expect(l.ref(2).selection.from).to.equal(l.ref(1))
@@ -58,7 +58,7 @@ describe "Selections Test", ->
     l_left = l.ref(1)
     l_right = l.ref(2)
     sel = @yTest.users[0].val("selections")
-    sel.select(l_left, l_right, ["c": "blue"])
+    sel.select(l_left, l_right, {"c": "blue"})
     @yTest.flushAll()
     l = @yTest.users[1].val("list")
     expect(l.ref(1).selection.from).to.equal(l.ref(1))
@@ -66,28 +66,130 @@ describe "Selections Test", ->
     expect(l.ref(2).selection.from).to.equal(l.ref(1))
     expect(l.ref(2).selection.to).to.equal(l.ref(2))
 
-  it "intersected two elements, checked for pointers and attrs", ->
+  it "intersected two elements, checked for pointers and attrs (strict inner overwrite)", ->
     l = @yTest.users[0].val("list")
     l_left = l.ref(1)
     l_right = l.ref(3)
-    sel = @yTest.users[0].val("selections")
-    sel.select(l_left, l_right, ["c": "black"])
+    sel = @yTest.users[0].val("selections").select(l_left, l_right, {"c": "black"})
 
-    l = @yTest.users[1].val("list")
+    l = @yTest.users[0].val("list")
+    l_left = l.ref(2)
+    l_right = l.ref(2)
+    @yTest.users[0].val("selections").select(l_left, l_right, {"c": "blue"})
+
+    @yTest.flushAll()
+    expect(l.ref(2).selection.from).to.equal(l.ref(2))
+    expect(l.ref(2).selection.to).to.equal(l.ref(2))
+    expect(l.ref(2).selection.attrs.c).to.equal("blue")
+    expect(l.ref(2).selection.from).to.equal(l.ref(2))
+    expect(l.ref(2).selection.to).to.equal(l.ref(2))
+    expect(l.ref(2).selection.attrs.c).to.equal("blue")
+    expect(l.ref(3).selection.attrs.c).to.equal("black")
+    expect(l.ref(1).selection.attrs.c).to.equal("black")
+
+  it "intersected two elements, checked for pointers and attrs (inner overwrite, left non-strict, right strict)", ->
+    l = @yTest.users[0].val("list")
+    l_left = l.ref(1)
+    l_right = l.ref(3)
+    sel = @yTest.users[0].val("selections").select(l_left, l_right, {"c": "black"})
+
+    l = @yTest.users[0].val("list")
     l_left = l.ref(1)
     l_right = l.ref(2)
-    sel = @yTest.users[0].val("selections")
-    sel.select(l_left, l_right, ["my_attr": "blue"])
+    @yTest.users[0].val("selections").select(l_left, l_right, {"c": "blue"})
+
     @yTest.flushAll()
-    l = @yTest.users[1].val("list")
     expect(l.ref(1).selection.from).to.equal(l.ref(1))
     expect(l.ref(1).selection.to).to.equal(l.ref(2))
     expect(l.ref(1).selection.attrs.c).to.equal("blue")
     expect(l.ref(2).selection.from).to.equal(l.ref(1))
     expect(l.ref(2).selection.to).to.equal(l.ref(2))
     expect(l.ref(2).selection.attrs.c).to.equal("blue")
-    expect(l.ref(3).selection.attrs.c).to.equal("bluck")
+    expect(l.ref(3).selection.attrs.c).to.equal("black")
 
+  it "intersected two elements, checked for pointers and attrs (inner overwrite, right non-strict, left strict)", ->
+    l = @yTest.users[0].val("list")
+    l_left = l.ref(0)
+    l_right = l.ref(2)
+    sel = @yTest.users[0].val("selections").select(l_left, l_right, {"c": "black"})
+
+    l = @yTest.users[0].val("list")
+    l_left = l.ref(1)
+    l_right = l.ref(2)
+    @yTest.users[0].val("selections").select(l_left, l_right, {"c": "blue"})
+
+    @yTest.flushAll()
+    expect(l.ref(1).selection.from).to.equal(l.ref(1))
+    expect(l.ref(1).selection.to).to.equal(l.ref(2))
+    expect(l.ref(1).selection.attrs.c).to.equal("blue")
+    expect(l.ref(2).selection.from).to.equal(l.ref(1))
+    expect(l.ref(2).selection.to).to.equal(l.ref(2))
+    expect(l.ref(2).selection.attrs.c).to.equal("blue")
+    expect(l.ref(0).selection.attrs.c).to.equal("black")
+
+  it "intersected two elements, checked for pointers and attrs (strict outer overwrite)", ->
+
+    l = @yTest.users[0].val("list")
+    l_left = l.ref(2)
+    l_right = l.ref(2)
+    @yTest.users[0].val("selections").select(l_left, l_right, {"c": "blue"})
+
+    l = @yTest.users[0].val("list")
+    l_left = l.ref(1)
+    l_right = l.ref(3)
+    sel = @yTest.users[0].val("selections").select(l_left, l_right, {"c": "black"})
+
+    @yTest.flushAll()
+    expect(l.ref(2).selection.from).to.equal(l.ref(2))
+    expect(l.ref(2).selection.to).to.equal(l.ref(2))
+    expect(l.ref(2).selection.attrs.c).to.equal("blue")
+    expect(l.ref(2).selection.from).to.equal(l.ref(2))
+    expect(l.ref(2).selection.to).to.equal(l.ref(2))
+    expect(l.ref(2).selection.attrs.c).to.equal("blue")
+    expect(l.ref(3).selection.attrs.c).to.equal("black")
+    expect(l.ref(1).selection.attrs.c).to.equal("black")
+
+  it "intersected two elements, checked for pointers and attrs (outer overwrite, left non-strict, right strict)", ->
+
+    l = @yTest.users[0].val("list")
+    l_left = l.ref(1)
+    l_right = l.ref(2)
+    @yTest.users[0].val("selections").select(l_left, l_right, {"c": "blue"})
+
+    l = @yTest.users[0].val("list")
+    l_left = l.ref(1)
+    l_right = l.ref(3)
+    sel = @yTest.users[0].val("selections").select(l_left, l_right, {"c": "black"})
+
+
+    @yTest.flushAll()
+    expect(l.ref(1).selection.from).to.equal(l.ref(1))
+    expect(l.ref(1).selection.to).to.equal(l.ref(2))
+    expect(l.ref(1).selection.attrs.c).to.equal("blue")
+    expect(l.ref(2).selection.from).to.equal(l.ref(1))
+    expect(l.ref(2).selection.to).to.equal(l.ref(2))
+    expect(l.ref(2).selection.attrs.c).to.equal("blue")
+    expect(l.ref(3).selection.attrs.c).to.equal("black")
+
+  it "intersected two elements, checked for pointers and attrs (outer overwrite, right non-strict, left strict)", ->
+    l = @yTest.users[0].val("list")
+    l_left = l.ref(1)
+    l_right = l.ref(2)
+    @yTest.users[0].val("selections").select(l_left, l_right, {"c": "blue"})
+
+    l = @yTest.users[0].val("list")
+    l_left = l.ref(0)
+    l_right = l.ref(2)
+    sel = @yTest.users[0].val("selections").select(l_left, l_right, {"c": "black"})
+
+    @yTest.flushAll()
+    expect(l.ref(1).selection.from).to.equal(l.ref(1))
+    expect(l.ref(1).selection.to).to.equal(l.ref(2))
+    expect(l.ref(1).selection.attrs.c).to.equal("blue")
+    expect(l.ref(2).selection.from).to.equal(l.ref(1))
+    expect(l.ref(2).selection.to).to.equal(l.ref(2))
+    expect(l.ref(2).selection.attrs.c).to.equal("blue")
+    expect(l.ref(0).selection.attrs.c).to.equal("black")
 
 module.exports = SelectionsTest
 
