@@ -172,9 +172,10 @@ class YSelections
         while (not o.next_cl.selection?) and (o isnt to)
           o = o.next_cl
         end = o
-        selection = createSelection start, end, delta.attrs
-        start.selection = selection
-        end.selection = selection
+        if delta.type isnt "unselect"
+          selection = createSelection start, end, delta.attrs
+          start.selection = selection
+          end.selection = selection
         o = o.next_cl
 
     return delta # it is necessary that delta is returned in the way it was applied on the global delta.
@@ -223,7 +224,7 @@ class YSelections
 
   # * get all the selections of a y-list
   # * this will also test if the selections are well formed (after $from follows $to follows $from ..)
-  getSelectionsOfList: (list)->
+  getSelections: (list)->
     o = list.ref(0)
     sel_start = null
     pos = 0
@@ -236,7 +237,7 @@ class YSelections
             throw new Error "Found two consecutive from elements. The selections are no longer safe to use! (contact the owner of the repository)"
           else
             sel_start = pos
-        else if o.selection.to is o
+        if o.selection.to is o
           if sel_start?
             number_of_attrs = 0
             attrs = {}
@@ -247,10 +248,11 @@ class YSelections
               result.push
                 from: sel_start
                 to: pos
-                attrs: attrsr
+                attrs: attrs
+            sel_start = null
           else
             throw new Error "Found two consecutive to elements. The selections are no longer safe to use! (contact the owner of the repository)"
-        else
+        else if o.selection.from isnt o
           throw new Error "This reference should not point to this selection, because the selection does not point to the reference. The selections are no longer safe to use! (contact the owner of the repository)"
       pos++
       o = o.next_cl

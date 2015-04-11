@@ -94,10 +94,10 @@ describe "Selections Test", ->
       expect(l.ref(1).selection.attrs.c).to.equal("black")
       expect(l.ref(4).selection.attrs.c).to.equal("black")
       s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
-      expect(s).to.deepEqual([
+      expect(s).to.deep.equal([
         {from:1,to:1,attrs:{"c":"black"}},
         {from:2,to:3,attrs:{"c":"blue"}},
-        {from:4,to:4,attrs:{"c":"black"}},
+        {from:4,to:4,attrs:{"c":"black"}}
         ])
 
     it "intersected two elements (minimal), checked for pointers and attrs (strict inner overwrite)", ->
@@ -121,6 +121,13 @@ describe "Selections Test", ->
       expect(l.ref(3).selection.attrs.c).to.equal("black")
       expect(l.ref(1).selection.attrs.c).to.equal("black")
 
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([
+        {from:1,to:1,attrs:{"c":"black"}},
+        {from:2,to:2,attrs:{"c":"blue"}},
+        {from:3,to:3,attrs:{"c":"black"}}
+        ])
+
     it "intersected two elements, checked for pointers and attrs (inner overwrite, left non-strict, right strict)", ->
       l = @yTest.users[0].val("list")
       l_left = l.ref(1)
@@ -140,6 +147,12 @@ describe "Selections Test", ->
       expect(l.ref(2).selection.to).to.equal(l.ref(2))
       expect(l.ref(2).selection.attrs.c).to.equal("blue")
       expect(l.ref(3).selection.attrs.c).to.equal("black")
+
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([
+        {from:1,to:2,attrs:{"c":"blue"}},
+        {from:3,to:3,attrs:{"c":"black"}}
+        ])
 
     it "intersected two elements (minimal), checked for pointers and attrs (inner overwrite, left non-strict, right strict)", ->
       l = @yTest.users[0].val("list")
@@ -162,6 +175,11 @@ describe "Selections Test", ->
       expect(l.ref(2).selection.attrs.c).to.equal("black")
       expect(l.ref(3).selection.attrs.c).to.equal("black")
 
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([
+        {from:1,to:1,attrs:{"c":"blue"}},
+        {from:2,to:3,attrs:{"c":"black"}}
+        ])
 
     it "intersected two elements, checked for pointers and attrs (inner overwrite, right non-strict, left strict)", ->
       l = @yTest.users[0].val("list")
@@ -182,6 +200,12 @@ describe "Selections Test", ->
       expect(l.ref(2).selection.to).to.equal(l.ref(2))
       expect(l.ref(2).selection.attrs.c).to.equal("blue")
       expect(l.ref(0).selection.attrs.c).to.equal("black")
+
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([
+        {from:0,to:0,attrs:{"c":"black"}},
+        {from:1,to:2,attrs:{"c":"blue"}}
+        ])
 
     it "intersected two elements (minimal), checked for pointers and attrs (inner overwrite, right non-strict, left strict)", ->
       l = @yTest.users[0].val("list")
@@ -204,6 +228,12 @@ describe "Selections Test", ->
 
       expect(l.ref(2).selection.attrs.c).to.equal("blue")
       expect(l.ref(0).selection.attrs.c).to.equal("black")
+
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([
+        {from:0,to:1,attrs:{"c":"black"}},
+        {from:2,to:2,attrs:{"c":"blue"}}
+        ])
 
     it "intersected two elements, checked for pointers and attrs (strict outer overwrite)", ->
       l = @yTest.users[0].val("list")
@@ -231,6 +261,13 @@ describe "Selections Test", ->
       expect(l.ref(3).selection.attrs.c).to.equal("black")
       expect(l.ref(1).selection.attrs.c).to.equal("black")
 
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([
+        {from:1,to:1,attrs:{"c":"black"}},
+        {from:2,to:3,attrs:{"c":"black"}},
+        {from:4,to:4,attrs:{"c":"black"}}
+        ])
+
     it "intersected two elements (minimal), checked for pointers and attrs (strict outer overwrite)", ->
 
       l = @yTest.users[0].val("list")
@@ -253,6 +290,13 @@ describe "Selections Test", ->
       expect(l.ref(3).selection.attrs.c).to.equal("black")
       expect(l.ref(1).selection.attrs.c).to.equal("black")
 
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([
+        {from:1,to:1,attrs:{"c":"black"}},
+        {from:2,to:2,attrs:{"c":"black"}},
+        {from:3,to:3,attrs:{"c":"black"}}
+        ])
+
     it "intersected two elements, checked for pointers and attrs (outer overwrite, left non-strict, right strict)", ->
 
       l = @yTest.users[0].val("list")
@@ -274,6 +318,12 @@ describe "Selections Test", ->
       expect(l.ref(2).selection.to).to.equal(l.ref(2))
       expect(l.ref(2).selection.attrs.c).to.equal("black")
       expect(l.ref(3).selection.attrs.c).to.equal("black")
+
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([
+        {from:1,to:2,attrs:{"c":"black"}},
+        {from:3,to:3,attrs:{"c":"black"}}
+        ])
 
     it "intersected two elements (minimal), checked for pointers and attrs (outer overwrite, left non-strict, right strict)", ->
 
@@ -302,6 +352,12 @@ describe "Selections Test", ->
       expect(l.ref(3).selection.attrs.c).to.equal("black")
       expect(l.ref(1).selection.attrs.c).to.equal("black")
 
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([
+        {from:1,to:1,attrs:{"c":"black"}},
+        {from:2,to:3,attrs:{"c":"black"}}
+        ])
+
     it "intersected two elements, checked for pointers and attrs (outer overwrite, right non-strict, left strict)", ->
       l = @yTest.users[0].val("list")
       l_left = l.ref(1)
@@ -321,6 +377,12 @@ describe "Selections Test", ->
       expect(l.ref(2).selection.to).to.equal(l.ref(2))
       expect(l.ref(2).selection.attrs.c).to.equal("black")
       expect(l.ref(0).selection.attrs.c).to.equal("black")
+
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([
+        {from:0,to:0,attrs:{"c":"black"}},
+        {from:1,to:2,attrs:{"c":"black"}}
+        ])
 
     it "intersected two elements (minimal), checked for pointers and attrs (outer overwrite, right non-strict, left strict)", ->
       l = @yTest.users[0].val("list")
@@ -347,6 +409,12 @@ describe "Selections Test", ->
       expect(l.ref(2).selection.attrs.c).to.equal("black")
       expect(l.ref(0).selection.attrs.c).to.equal("black")
       expect(l.ref(1).selection.attrs.c).to.equal("black")
+
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([
+        {from:0,to:1,attrs:{"c":"black"}},
+        {from:2,to:2,attrs:{"c":"black"}}
+        ])
 
   describe "Unselections", ()->
     it "intersected a selection, checked for pointers and attrs (strict inner overwrite)", ->
@@ -376,6 +444,12 @@ describe "Selections Test", ->
       expect(l.ref(1).selection.attrs.c).to.equal("black")
       expect(l.ref(4).selection.attrs.c).to.equal("black")
 
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([
+        {from:1,to:1,attrs:{"c":"black"}},
+        {from:4,to:4,attrs:{"c":"black"}}
+        ])
+
     it "intersected a selection (minimal), checked for pointers and attrs (strict inner overwrite)", ->
       l = @yTest.users[0].val("list")
       l_left = l.ref(1)
@@ -395,6 +469,12 @@ describe "Selections Test", ->
       expect(l.ref(2).selection.attrs.c).to.be.undefined
       expect(l.ref(3).selection.attrs.c).to.equal("black")
       expect(l.ref(1).selection.attrs.c).to.equal("black")
+
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([
+        {from:1,to:1,attrs:{"c":"black"}},
+        {from:3,to:3,attrs:{"c":"black"}}
+        ])
 
     it "intersected a selection, checked for pointers and attrs (inner overwrite, left non-strict, right strict)", ->
       l = @yTest.users[0].val("list")
@@ -416,6 +496,11 @@ describe "Selections Test", ->
       expect(l.ref(2).selection.attrs.c).to.be.undefined
       expect(l.ref(3).selection.attrs.c).to.equal("black")
 
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([
+        {from:3,to:3,attrs:{"c":"black"}},
+        ])
+
     it "intersected a selection (minimal), checked for pointers and attrs (inner overwrite, left non-strict, right strict)", ->
       l = @yTest.users[0].val("list")
       l_left = l.ref(1)
@@ -436,6 +521,10 @@ describe "Selections Test", ->
       expect(l.ref(2).selection.attrs.c).to.equal("black")
       expect(l.ref(3).selection.attrs.c).to.equal("black")
 
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([
+        {from:2,to:3,attrs:{"c":"black"}}
+        ])
 
     it "intersected a selection, checked for pointers and attrs (inner overwrite, right non-strict, left strict)", ->
       l = @yTest.users[0].val("list")
@@ -456,6 +545,11 @@ describe "Selections Test", ->
       expect(l.ref(2).selection.to).to.equal(l.ref(2))
       expect(l.ref(2).selection.attrs.c).to.be.undefined
       expect(l.ref(0).selection.attrs.c).to.equal("black")
+
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([
+        {from:0,to:0,attrs:{"c":"black"}},
+        ])
 
     it "intersected a selection (minimal), checked for pointers and attrs (inner overwrite, right non-strict, left strict)", ->
       l = @yTest.users[0].val("list")
@@ -478,6 +572,11 @@ describe "Selections Test", ->
 
       expect(l.ref(2).selection.attrs.c).to.be.undefined
       expect(l.ref(0).selection.attrs.c).to.equal("black")
+
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([
+        {from:0,to:1,attrs:{"c":"black"}}
+        ])
 
     it "intersected a selection, checked for pointers and attrs (strict outer overwrite)", ->
       l = @yTest.users[0].val("list")
@@ -502,7 +601,11 @@ describe "Selections Test", ->
 
       expect(l.ref(2).selection.attrs.c).to.be.undefined
       expect(l.ref(3).selection.attrs.c).to.be.undefined
-      expect(l.ref(1).selection.attrs.c).to.be.undefined
+      expect(l.ref(1).selection).to.be.undefined
+      expect(l.ref(4).selection).to.be.undefined
+
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([])
 
     it "intersected a selection (minimal), checked for pointers and attrs (strict outer overwrite)", ->
 
@@ -523,8 +626,11 @@ describe "Selections Test", ->
       expect(l.ref(2).selection.to).to.equal(l.ref(2))
 
       expect(l.ref(2).selection.attrs.c).to.be.undefined
-      expect(l.ref(3).selection.attrs.c).to.be.undefined
-      expect(l.ref(1).selection.attrs.c).to.be.undefined
+      expect(l.ref(1).selection).to.be.undefined
+      expect(l.ref(3).selection).to.be.undefined
+
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([])
 
     it "intersected a selection, checked for pointers and attrs (outer overwrite, left non-strict, right strict)", ->
 
@@ -546,8 +652,11 @@ describe "Selections Test", ->
       expect(l.ref(2).selection.to).to.equal(l.ref(2))
 
       expect(l.ref(2).selection.attrs.c).to.be.undefined
-      expect(l.ref(3).selection.attrs.c).to.be.undefined
+      expect(l.ref(3).selection).to.be.undefined
       expect(l.ref(1).selection.attrs.c).to.be.undefined
+
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([])
 
     it "intersected a selection (minimal), checked for pointers and attrs (outer overwrite, left non-strict, right strict)", ->
 
@@ -569,12 +678,13 @@ describe "Selections Test", ->
 
       expect(l.ref(1).selection.to).to.equal(l.ref(1))
       expect(l.ref(1).selection.from).to.equal(l.ref(1))
-      expect(l.ref(2).selection.to).to.equal(l.ref(3))
-      expect(l.ref(3).selection.from).to.equal(l.ref(2))
 
-      expect(l.ref(2).selection.attrs.c).to.be.undefined
-      expect(l.ref(3).selection.attrs.c).to.be.undefined
+      expect(l.ref(2).selection).to.be.undefined
+      expect(l.ref(3).selection).to.be.undefined
       expect(l.ref(1).selection.attrs.c).to.be.undefined
+
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([])
 
     it "intersected a selection, checked for pointers and attrs (outer overwrite, right non-strict, left strict)", ->
       l = @yTest.users[0].val("list")
@@ -595,7 +705,10 @@ describe "Selections Test", ->
 
       expect(l.ref(2).selection.attrs.c).to.be.undefined
       expect(l.ref(1).selection.attrs.c).to.be.undefined
-      expect(l.ref(0).selection.attrs.c).to.be.undefined
+      expect(l.ref(0).selection).to.be.undefined
+
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([])
 
     it "intersected a selection (minimal), checked for pointers and attrs (outer overwrite, right non-strict, left strict)", ->
       l = @yTest.users[0].val("list")
@@ -614,14 +727,15 @@ describe "Selections Test", ->
 
       expect(l.ref(1).selection).not.to.equal(l.ref(2).selection)
 
-      expect(l.ref(0).selection.to).to.equal(l.ref(1))
-      expect(l.ref(1).selection.from).to.equal(l.ref(0))
       expect(l.ref(2).selection.to).to.equal(l.ref(2))
       expect(l.ref(2).selection.from).to.equal(l.ref(2))
 
       expect(l.ref(2).selection.attrs.c).to.be.undefined
-      expect(l.ref(1).selection.attrs.c).to.be.undefined
-      expect(l.ref(0).selection.attrs.c).to.be.undefined
+      expect(l.ref(1).selection).to.be.undefined
+      expect(l.ref(0).selection).to.be.undefined
+
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deep.equal([])
 
 module.exports = SelectionsTest
 

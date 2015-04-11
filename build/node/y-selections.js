@@ -127,9 +127,11 @@ YSelections = (function() {
           o = o.next_cl;
         }
         end = o;
-        selection = createSelection(start, end, delta.attrs);
-        start.selection = selection;
-        end.selection = selection;
+        if (delta.type !== "unselect") {
+          selection = createSelection(start, end, delta.attrs);
+          start.selection = selection;
+          end.selection = selection;
+        }
         o = o.next_cl;
       }
     }
@@ -181,7 +183,7 @@ YSelections = (function() {
     return this._model.applyDelta(delta);
   };
 
-  YSelections.prototype.getSelectionsOfList = function(list) {
+  YSelections.prototype.getSelections = function(list) {
     var attrs, n, number_of_attrs, o, pos, ref, result, sel_start, v;
     o = list.ref(0);
     sel_start = null;
@@ -195,7 +197,8 @@ YSelections = (function() {
           } else {
             sel_start = pos;
           }
-        } else if (o.selection.to === o) {
+        }
+        if (o.selection.to === o) {
           if (sel_start != null) {
             number_of_attrs = 0;
             attrs = {};
@@ -209,13 +212,14 @@ YSelections = (function() {
               result.push({
                 from: sel_start,
                 to: pos,
-                attrs: attrsr
+                attrs: attrs
               });
             }
+            sel_start = null;
           } else {
             throw new Error("Found two consecutive to elements. The selections are no longer safe to use! (contact the owner of the repository)");
           }
-        } else {
+        } else if (o.selection.from !== o) {
           throw new Error("This reference should not point to this selection, because the selection does not point to the reference. The selections are no longer safe to use! (contact the owner of the repository)");
         }
       }
