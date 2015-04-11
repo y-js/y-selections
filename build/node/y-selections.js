@@ -55,7 +55,7 @@ YSelections = (function() {
         while ((o.selection == null) && (o.type !== "Delimiter")) {
           o = o.prev_cl;
         }
-        if ((o.selection == null) || o.selection["to"] === o) {
+        if ((o.selection == null) || o.selection.to === o) {
           return;
         }
         old_selection = o.selection;
@@ -85,10 +85,10 @@ YSelections = (function() {
       cut_off_from();
       cut_off_to = function() {
         var new_selection, o, old_selection;
-        if ((to.selection != null) && from.selection.to === to) {
+        if ((to.selection != null) && to.selection.to === to) {
           return;
         }
-        o = to.prev_cl;
+        o = to;
         while ((o.selection == null) && (o !== from)) {
           o = o.prev_cl;
         }
@@ -96,9 +96,9 @@ YSelections = (function() {
           return;
         }
         old_selection = o.selection;
-        new_selection = createSelection(old_selection.from, to, old_selection.attrs);
-        extendSelection(new_selection, delta.attrs);
-        old_selection.from = to.next_cl;
+        new_selection = createSelection(to.next_cl, old_selection.to, old_selection.attrs);
+        extendSelection(old_selection, delta.attrs);
+        old_selection.to = to;
         old_selection.to.selection = old_selection;
         new_selection.from.selection = new_selection;
         return new_selection.to.selection = new_selection;

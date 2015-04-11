@@ -51,7 +51,7 @@ class YSelections
         o = from.prev_cl
         while (not o.selection?) and (o.type isnt "Delimiter")
           o = o.prev_cl
-        if (not o.selection?) or o.selection["to"] is o
+        if (not o.selection?) or o.selection.to is o
           # no intersection
           return
         # We found a selection that intersects with $from.
@@ -112,11 +112,11 @@ class YSelections
       # 2. cut off the selection that intersects with $to
       cut_off_to = ()->
         # check if a selection (to the left of $to) intersects with $to
-        if to.selection? and from.selection.to is to
+        if to.selection? and to.selection.to is to
           # does not intersect, because the end is already selected
           return
         # find first selection to the left
-        o = to.prev_cl
+        o = to
         while (not o.selection?) and (o isnt from)
           o = o.prev_cl
         if (not o.selection?) or o.selection["to"] is o
@@ -136,11 +136,12 @@ class YSelections
         old_selection = o.selection
 
         # create $new_selection
-        new_selection = createSelection old_selection.from, to, old_selection.attrs
-        extendSelection new_selection, delta.attrs
+        new_selection = createSelection to.next_cl, old_selection.to, old_selection.attrs
+        # extend old_selection with the new attrs
+        extendSelection old_selection, delta.attrs
 
         # update references
-        old_selection.from = to.next_cl
+        old_selection.to = to
         # update references (pointers to respective selections)
         old_selection.to.selection = old_selection
         new_selection.from.selection = new_selection
