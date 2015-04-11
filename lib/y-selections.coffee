@@ -221,6 +221,41 @@ class YSelections
 
     @_model.applyDelta(delta)
 
+  # * get all the selections of a y-list
+  # * this will also test if the selections are well formed (after $from follows $to follows $from ..)
+  getSelectionsOfList: (list)->
+    o = list.ref(0)
+    sel_start = null
+    pos = 0
+    result = []
+
+    while o.next_cl?
+      if o.selection?
+        if o.selection.from is o
+          if sel_start?
+            throw new Error "Found two consecutive from elements. The selections are no longer safe to use! (contact the owner of the repository)"
+          else
+            sel_start = pos
+        else if o.selection.to is o
+          if sel_start?
+            number_of_attrs = 0
+            attrs = {}
+            for n,v of o.selection.attrs
+              attrs[n] = v
+              number_of_attrs++
+            if number_of_attrs > 0
+              result.push
+                from: sel_start
+                to: pos
+                attrs: attrsr
+          else
+            throw new Error "Found two consecutive to elements. The selections are no longer safe to use! (contact the owner of the repository)"
+        else
+          throw new Error "This reference should not point to this selection, because the selection does not point to the reference. The selections are no longer safe to use! (contact the owner of the repository)"
+      pos++
+      o = o.next_cl
+    return result
+
   observe: (f)->
     @_model.observe f
 

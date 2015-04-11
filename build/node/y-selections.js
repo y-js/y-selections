@@ -181,6 +181,50 @@ YSelections = (function() {
     return this._model.applyDelta(delta);
   };
 
+  YSelections.prototype.getSelectionsOfList = function(list) {
+    var attrs, n, number_of_attrs, o, pos, ref, result, sel_start, v;
+    o = list.ref(0);
+    sel_start = null;
+    pos = 0;
+    result = [];
+    while (o.next_cl != null) {
+      if (o.selection != null) {
+        if (o.selection.from === o) {
+          if (sel_start != null) {
+            throw new Error("Found two consecutive from elements. The selections are no longer safe to use! (contact the owner of the repository)");
+          } else {
+            sel_start = pos;
+          }
+        } else if (o.selection.to === o) {
+          if (sel_start != null) {
+            number_of_attrs = 0;
+            attrs = {};
+            ref = o.selection.attrs;
+            for (n in ref) {
+              v = ref[n];
+              attrs[n] = v;
+              number_of_attrs++;
+            }
+            if (number_of_attrs > 0) {
+              result.push({
+                from: sel_start,
+                to: pos,
+                attrs: attrsr
+              });
+            }
+          } else {
+            throw new Error("Found two consecutive to elements. The selections are no longer safe to use! (contact the owner of the repository)");
+          }
+        } else {
+          throw new Error("This reference should not point to this selection, because the selection does not point to the reference. The selections are no longer safe to use! (contact the owner of the repository)");
+        }
+      }
+      pos++;
+      o = o.next_cl;
+    }
+    return result;
+  };
+
   YSelections.prototype.observe = function(f) {
     return this._model.observe(f);
   };

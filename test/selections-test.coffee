@@ -93,6 +93,12 @@ describe "Selections Test", ->
       expect(l.ref(3).selection.attrs.c).to.equal("blue")
       expect(l.ref(1).selection.attrs.c).to.equal("black")
       expect(l.ref(4).selection.attrs.c).to.equal("black")
+      s = @yTest.users[0].val("selections").getSelections(@yTest.users[0].val("list"))
+      expect(s).to.deepEqual([
+        {from:1,to:1,attrs:{"c":"black"}},
+        {from:2,to:3,attrs:{"c":"blue"}},
+        {from:4,to:4,attrs:{"c":"black"}},
+        ])
 
     it "intersected two elements (minimal), checked for pointers and attrs (strict inner overwrite)", ->
       l = @yTest.users[0].val("list")
