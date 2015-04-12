@@ -14,7 +14,7 @@ class YSelections
   _setModel: (@_model)->
 
   _apply: (delta)->
-    # TODO: currently, applies the delta _as is_.
+    undos = [] # list of deltas that are necessary to undo the change
     from = @_model.HB.getOperation delta.from
     to = @_model.HB.getOperation delta.to
     createSelection = (from, to, attrs)->
@@ -29,18 +29,48 @@ class YSelections
 
     extendSelection = (selection)->
       if delta.type is "unselect"
+        undo_attrs = {}
         for n in delta.attrs
+          if selection.attrs[n]?
+            undo_attrs[n] = selection.attrs[n]
           delete selection.attrs[n]
+        undos.push
+          from: delta.from
+          to: delta.to
+          attrs: undo_attrs
+          type: "select"
       else
+        undo_attrs = {} # for undo selection (overwrite of existing selection)
+        undo_attrs_list = [] # for undo selection (not overwrite)
+        undo_need_unselect = false
+        undo_need_select = false
         for n,v of delta.attrs
+          if selection.attrs[n]?
+            undo_attrs[n] = selection.attrs[n]
+            undo_need_select = true
+          else
+            undo_attrs_list.push n
+            undo_need_unselect = true
           selection.attrs[n] = v
+        if undo_need_select
+          undos.push
+            from: delta.from
+            to: delta.to
+            attrs: undo_attrs
+            type: "select"
+        if undo_need_unselect
+          undos.push
+            from: delta.from
+            to: delta.to
+            attrs: undo_attrs_list
+            type: "unselect"
 
     if not (from? and to?)
       console.log "wasn't able to apply the selection.."
     # Algorithm overview:
     # 1. cut off the selection that intersects with from
     # 2. cut off the selection that intersects with to
-    # 3. extend / add selections in between
+    # 3. extend / add selections inbetween
 
     #
     #### 1. cut off the selection that intersects with from
@@ -74,7 +104,7 @@ class YSelections
       # check if found selection also intersects with $to
       # * starting from $from, go to the right until you found either $to or old_selection.to
       # ** if $to: no intersection with $to
-      # ** if $old_selection.to: intersection with $to! 
+      # ** if $old_selection.to: intersection with $to!
       o = from
       while (o isnt old_selection.to) and (o isnt to)
         o = o.next_cl
@@ -89,7 +119,6 @@ class YSelections
         # update references (pointers to respective selections)
         old_selection.to.selection = old_selection
 
-        extendSelection new_selection, delta
         new_selection.from.selection = new_selection
         new_selection.to.selection = new_selection
       else
@@ -109,7 +138,6 @@ class YSelections
         opt_selection.from.selection = opt_selection
         opt_selection.to.selection = opt_selection
 
-        extendSelection new_selection, delta
         new_selection.from.selection = new_selection
         new_selection.to.selection = new_selection
 
@@ -144,8 +172,6 @@ class YSelections
 
       # create $new_selection
       new_selection = createSelection to.next_cl, old_selection.to, old_selection.attrs
-      # extend old_selection with the new attrs
-      extendSelection old_selection, delta
 
       # update references
       old_selection.to = to
@@ -163,7 +189,7 @@ class YSelections
       if o.selection?
         console.log "1"
         # just extend the existing selection
-        extendSelection o.selection, delta
+        extendSelection o.selection, delta # will push undo-deltas to $undos
         o = o.selection.to.next_cl
       else
         # create a new selection (until you find the next one)
@@ -173,6 +199,14 @@ class YSelections
           o = o.next_cl
         end = o
         if delta.type isnt "unselect"
+          attr_list = []
+          for n,v of delta.attrs
+            attr_list.push n
+          undos.push
+            from: start.getUid()
+            to: end.getUid()
+            attrs: attr_list
+            type: "unselect"
           selection = createSelection start, end, delta.attrs
           start.selection = selection
           end.selection = selection
@@ -182,18 +216,11 @@ class YSelections
     # so that yjs can know exactly what was applied.
 
   # "undo" a delta from the composition_value
-  _unapply: (delta)->
-    from = @_model.HB.getOperation delta.from
-    to = @_model.HB.getOperation delta.to
-    if not (from? and to?)
-      console.log "wasn't able to unapply the selection.."
-    if delta.type is "select"
-      delete from.selection
-      delete to.selection
-    else if delta.type is "unselect"
-      # ..
-    else
-      throw new Error "unsupported delta!"
+  _unapply: (deltas)->
+    # _apply returns a _list_ of deltas, that are neccessary to undo the change. Now we _apply every delta in the list (and discard the results)
+    for delta in deltas
+      @_apply delta
+    return
 
   # update the globalDelta with delta
 
