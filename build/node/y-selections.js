@@ -1,7 +1,9 @@
 var YSelections;
 
 YSelections = (function() {
-  function YSelections() {}
+  function YSelections() {
+    this._listeners = [];
+  }
 
   YSelections.prototype._name = "Selections";
 
@@ -17,10 +19,21 @@ YSelections = (function() {
   };
 
   YSelections.prototype._apply = function(delta) {
-    var attr_list, createSelection, cut_off_from, cut_off_to, end, extendSelection, from, n, o, ref, selection, start, to, undos, v;
+    var attr_list, createSelection, cut_off_from, cut_off_to, end, extendSelection, from, i, l, len, n, o, observer_call, ref, ref1, selection, start, to, undos, v;
     undos = [];
     from = this._model.HB.getOperation(delta.from);
     to = this._model.HB.getOperation(delta.to);
+    observer_call = {
+      from: from,
+      to: to,
+      type: delta.type,
+      attrs: delta.attrs
+    };
+    ref = this._listeners;
+    for (i = 0, len = ref.length; i < len; i++) {
+      l = ref[i];
+      l.call(this, observer_call);
+    }
     createSelection = function(from, to, attrs) {
       var n, new_attrs, v;
       new_attrs = {};
@@ -35,12 +48,12 @@ YSelections = (function() {
       };
     };
     extendSelection = function(selection) {
-      var i, len, n, ref, ref1, undo_attrs, undo_attrs_list, undo_need_select, undo_need_unselect, v;
+      var j, len1, n, ref1, ref2, undo_attrs, undo_attrs_list, undo_need_select, undo_need_unselect, v;
       if (delta.type === "unselect") {
         undo_attrs = {};
-        ref = delta.attrs;
-        for (i = 0, len = ref.length; i < len; i++) {
-          n = ref[i];
+        ref1 = delta.attrs;
+        for (j = 0, len1 = ref1.length; j < len1; j++) {
+          n = ref1[j];
           if (selection.attrs[n] != null) {
             undo_attrs[n] = selection.attrs[n];
           }
@@ -57,9 +70,9 @@ YSelections = (function() {
         undo_attrs_list = [];
         undo_need_unselect = false;
         undo_need_select = false;
-        ref1 = delta.attrs;
-        for (n in ref1) {
-          v = ref1[n];
+        ref2 = delta.attrs;
+        for (n in ref2) {
+          v = ref2[n];
           if (selection.attrs[n] != null) {
             undo_attrs[n] = selection.attrs[n];
             undo_need_select = true;
@@ -160,9 +173,9 @@ YSelections = (function() {
         end = o;
         if (delta.type !== "unselect") {
           attr_list = [];
-          ref = delta.attrs;
-          for (n in ref) {
-            v = ref[n];
+          ref1 = delta.attrs;
+          for (n in ref1) {
+            v = ref1[n];
             attr_list.push(n);
           }
           undos.push({
@@ -264,7 +277,13 @@ YSelections = (function() {
   };
 
   YSelections.prototype.observe = function(f) {
-    return this._model.observe(f);
+    return this._listeners.push(f);
+  };
+
+  YSelections.prototype.unobserve = function(f) {
+    return this._listeners = this._listeners.filter(function(g) {
+      return f !== g;
+    });
   };
 
   return YSelections;

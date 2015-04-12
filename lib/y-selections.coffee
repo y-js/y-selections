@@ -3,6 +3,7 @@
 
 class YSelections
   constructor: ()->
+    @_listeners = []
 
   _name: "Selections"
 
@@ -17,6 +18,14 @@ class YSelections
     undos = [] # list of deltas that are necessary to undo the change
     from = @_model.HB.getOperation delta.from
     to = @_model.HB.getOperation delta.to
+    # notify listeners:
+    observer_call =
+      from: from
+      to: to
+      type: delta.type
+      attrs: delta.attrs
+    for l in @_listeners
+      l.call this, observer_call
     createSelection = (from, to, attrs)->
       new_attrs = {}
       for n,v of attrs
@@ -286,7 +295,11 @@ class YSelections
     return result
 
   observe: (f)->
-    @_model.observe f
+    @_listeners.push f
+
+  unobserve: (f)->
+    @_listeners = @_listeners.filter (g)->
+      f != g
 
 
 if window?
