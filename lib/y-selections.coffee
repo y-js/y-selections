@@ -196,13 +196,11 @@ class YSelections
     o = from
     while (o isnt to.next_cl)
       if o.selection?
-        console.log "1"
         # just extend the existing selection
         extendSelection o.selection, delta # will push undo-deltas to $undos
         o = o.selection.to.next_cl
       else
         # create a new selection (until you find the next one)
-        console.log "2"
         start = o
         while (not o.next_cl.selection?) and (o isnt to)
           o = o.next_cl
@@ -236,6 +234,13 @@ class YSelections
 
   # select _from_, _to_ with an _attribute_
   select: (from, to, attrs)->
+    length = 0
+    for a of attrs
+      length++
+      break
+    if length <= 0
+      return
+
     delta = # probably not as easy as this
       from: from.getUid()
       to: to.getUid()
@@ -250,6 +255,8 @@ class YSelections
       attrs = [attrs]
     if attrs.constructor isnt Array
       throw new Error "Y.Selections.prototype.unselect expects an Array or String as the third parameter (attributes)!"
+    if attrs.length <= 0
+      return
     delta = # probably not as easy as this
       from: from.getUid()
       to: to.getUid()
@@ -262,6 +269,9 @@ class YSelections
   # * this will also test if the selections are well formed (after $from follows $to follows $from ..)
   getSelections: (list)->
     o = list.ref(0)
+    if not o?
+      return []
+
     sel_start = null
     pos = 0
     result = []
@@ -310,6 +320,3 @@ if window?
 
 if module?
   module.exports = YSelections
-
-
-

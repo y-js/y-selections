@@ -161,11 +161,9 @@ YSelections = (function() {
     o = from;
     while (o !== to.next_cl) {
       if (o.selection != null) {
-        console.log("1");
         extendSelection(o.selection, delta);
         o = o.selection.to.next_cl;
       } else {
-        console.log("2");
         start = o;
         while ((o.next_cl.selection == null) && (o !== to)) {
           o = o.next_cl;
@@ -203,7 +201,15 @@ YSelections = (function() {
   };
 
   YSelections.prototype.select = function(from, to, attrs) {
-    var delta;
+    var a, delta, length;
+    length = 0;
+    for (a in attrs) {
+      length++;
+      break;
+    }
+    if (length <= 0) {
+      return;
+    }
     delta = {
       from: from.getUid(),
       to: to.getUid(),
@@ -221,6 +227,9 @@ YSelections = (function() {
     if (attrs.constructor !== Array) {
       throw new Error("Y.Selections.prototype.unselect expects an Array or String as the third parameter (attributes)!");
     }
+    if (attrs.length <= 0) {
+      return;
+    }
     delta = {
       from: from.getUid(),
       to: to.getUid(),
@@ -233,6 +242,9 @@ YSelections = (function() {
   YSelections.prototype.getSelections = function(list) {
     var attrs, n, number_of_attrs, o, pos, ref, result, sel_start, v;
     o = list.ref(0);
+    if (o == null) {
+      return [];
+    }
     sel_start = null;
     pos = 0;
     result = [];
