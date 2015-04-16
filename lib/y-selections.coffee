@@ -4,6 +4,7 @@
 class YSelections
   constructor: ()->
     @_listeners = []
+    @_composition_value = []
 
   _name: "Selections"
 
@@ -13,6 +14,19 @@ class YSelections
     @_model
 
   _setModel: (@_model)->
+
+  _getCompositionValue: ()->
+    for v in @_composition_value
+      {
+        from: v.from.getUid()
+        to: v.to.getUid()
+        attrs: v.attrs
+      }
+
+  _setCompositionValue: (composition_value)->
+    for v in composition_value
+      v.type = "select"
+      @_apply v
 
   _apply: (delta)->
     undos = [] # list of deltas that are necessary to undo the change
@@ -26,15 +40,17 @@ class YSelections
       attrs: delta.attrs
     for l in @_listeners
       l.call this, observer_call
-    createSelection = (from, to, attrs)->
+    createSelection = (from, to, attrs)=>
       new_attrs = {}
       for n,v of attrs
         new_attrs[n] = v
-      {
+      new_sel = {
         from: from
         to: to
         attrs: new_attrs
       }
+      @_composition_value.push new_sel
+      new_sel
 
     extendSelection = (selection)->
       if delta.type is "unselect"

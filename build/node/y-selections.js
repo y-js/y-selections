@@ -3,6 +3,7 @@ var YSelections;
 YSelections = (function() {
   function YSelections() {
     this._listeners = [];
+    this._composition_value = [];
   }
 
   YSelections.prototype._name = "Selections";
@@ -16,6 +17,32 @@ YSelections = (function() {
 
   YSelections.prototype._setModel = function(_model) {
     this._model = _model;
+  };
+
+  YSelections.prototype._getCompositionValue = function() {
+    var i, len, ref, results, v;
+    ref = this._composition_value;
+    results = [];
+    for (i = 0, len = ref.length; i < len; i++) {
+      v = ref[i];
+      results.push({
+        from: v.from.getUid(),
+        to: v.to.getUid(),
+        attrs: v.attrs
+      });
+    }
+    return results;
+  };
+
+  YSelections.prototype._setCompositionValue = function(composition_value) {
+    var i, len, results, v;
+    results = [];
+    for (i = 0, len = composition_value.length; i < len; i++) {
+      v = composition_value[i];
+      v.type = "select";
+      results.push(this._apply(v));
+    }
+    return results;
   };
 
   YSelections.prototype._apply = function(delta) {
@@ -34,19 +61,23 @@ YSelections = (function() {
       l = ref[i];
       l.call(this, observer_call);
     }
-    createSelection = function(from, to, attrs) {
-      var n, new_attrs, v;
-      new_attrs = {};
-      for (n in attrs) {
-        v = attrs[n];
-        new_attrs[n] = v;
-      }
-      return {
-        from: from,
-        to: to,
-        attrs: new_attrs
+    createSelection = (function(_this) {
+      return function(from, to, attrs) {
+        var n, new_attrs, new_sel, v;
+        new_attrs = {};
+        for (n in attrs) {
+          v = attrs[n];
+          new_attrs[n] = v;
+        }
+        new_sel = {
+          from: from,
+          to: to,
+          attrs: new_attrs
+        };
+        _this._composition_value.push(new_sel);
+        return new_sel;
       };
-    };
+    })(this);
     extendSelection = function(selection) {
       var j, len1, n, ref1, ref2, undo_attrs, undo_attrs_list, undo_need_select, undo_need_unselect, v;
       if (delta.type === "unselect") {
