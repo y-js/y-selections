@@ -20,25 +20,33 @@ YSelections = (function() {
   };
 
   YSelections.prototype._getCompositionValue = function() {
-    var i, len, ref, results, v;
-    ref = this._composition_value;
-    results = [];
-    for (i = 0, len = ref.length; i < len; i++) {
-      v = ref[i];
-      results.push({
-        from: v.from.getUid(),
-        to: v.to.getUid(),
-        attrs: v.attrs
-      });
-    }
-    return results;
+    var composition_value, composition_value_operations, i, v;
+    composition_value_operations = {};
+    composition_value = (function() {
+      var j, len, ref, results;
+      ref = this._composition_value;
+      results = [];
+      for (i = j = 0, len = ref.length; j < len; i = ++j) {
+        v = ref[i];
+        composition_value_operations["" + i + "/from"] = v.from;
+        composition_value_operations["" + i + "/to"] = v.to;
+        results.push({
+          attrs: v.attrs
+        });
+      }
+      return results;
+    }).call(this);
+    return {
+      composition_value: composition_value,
+      composition_value_operations: composition_value_operations
+    };
   };
 
   YSelections.prototype._setCompositionValue = function(composition_value) {
-    var i, len, results, v;
+    var j, len, results, v;
     results = [];
-    for (i = 0, len = composition_value.length; i < len; i++) {
-      v = composition_value[i];
+    for (j = 0, len = composition_value.length; j < len; j++) {
+      v = composition_value[j];
       v.type = "select";
       results.push(this._apply(v));
     }
@@ -46,10 +54,10 @@ YSelections = (function() {
   };
 
   YSelections.prototype._apply = function(delta) {
-    var attr_list, createSelection, cut_off_from, cut_off_to, end, extendSelection, from, i, l, len, n, o, observer_call, ref, ref1, selection, start, to, undos, v;
+    var attr_list, createSelection, cut_off_from, cut_off_to, end, extendSelection, from, j, l, len, n, o, observer_call, ref, ref1, selection, start, to, undos, v;
     undos = [];
-    from = this._model.HB.getOperation(delta.from);
-    to = this._model.HB.getOperation(delta.to);
+    from = delta.from;
+    to = delta.to;
     observer_call = {
       from: from,
       to: to,
@@ -57,8 +65,8 @@ YSelections = (function() {
       attrs: delta.attrs
     };
     ref = this._listeners;
-    for (i = 0, len = ref.length; i < len; i++) {
-      l = ref[i];
+    for (j = 0, len = ref.length; j < len; j++) {
+      l = ref[j];
       l.call(this, observer_call);
     }
     createSelection = (function(_this) {
@@ -79,12 +87,12 @@ YSelections = (function() {
       };
     })(this);
     extendSelection = function(selection) {
-      var j, len1, n, ref1, ref2, undo_attrs, undo_attrs_list, undo_need_select, undo_need_unselect, v;
+      var k, len1, n, ref1, ref2, undo_attrs, undo_attrs_list, undo_need_select, undo_need_unselect, v;
       if (delta.type === "unselect") {
         undo_attrs = {};
         ref1 = delta.attrs;
-        for (j = 0, len1 = ref1.length; j < len1; j++) {
-          n = ref1[j];
+        for (k = 0, len1 = ref1.length; k < len1; k++) {
+          n = ref1[k];
           if (selection.attrs[n] != null) {
             undo_attrs[n] = selection.attrs[n];
           }
@@ -131,9 +139,6 @@ YSelections = (function() {
         }
       }
     };
-    if (!((from != null) && (to != null))) {
-      console.log("wasn't able to apply the selection..");
-    }
     cut_off_from = function() {
       var new_selection, o, old_selection, opt_selection;
       if ((from.selection != null) && from.selection.from === from) {
@@ -208,8 +213,8 @@ YSelections = (function() {
             attr_list.push(n);
           }
           undos.push({
-            from: start.getUid(),
-            to: end.getUid(),
+            from: start,
+            to: end,
             attrs: attr_list,
             type: "unselect"
           });
@@ -224,15 +229,15 @@ YSelections = (function() {
   };
 
   YSelections.prototype._unapply = function(deltas) {
-    var delta, i, len;
-    for (i = 0, len = deltas.length; i < len; i++) {
-      delta = deltas[i];
+    var delta, j, len;
+    for (j = 0, len = deltas.length; j < len; j++) {
+      delta = deltas[j];
       this._apply(delta);
     }
   };
 
   YSelections.prototype.select = function(from, to, attrs) {
-    var a, delta, length;
+    var a, delta, delta_operations, length;
     length = 0;
     for (a in attrs) {
       length++;
@@ -241,17 +246,19 @@ YSelections = (function() {
     if (length <= 0) {
       return;
     }
+    delta_operations = {
+      from: from,
+      to: to
+    };
     delta = {
-      from: from.getUid(),
-      to: to.getUid(),
       attrs: attrs,
       type: "select"
     };
-    return this._model.applyDelta(delta);
+    return this._model.applyDelta(delta, delta_operations);
   };
 
   YSelections.prototype.unselect = function(from, to, attrs) {
-    var delta;
+    var delta, delta_operations;
     if (typeof attrs === "string") {
       attrs = [attrs];
     }
@@ -261,13 +268,15 @@ YSelections = (function() {
     if (attrs.length <= 0) {
       return;
     }
+    delta_operations = {
+      from: from,
+      to: to
+    };
     delta = {
-      from: from.getUid(),
-      to: to.getUid(),
       attrs: attrs,
       type: "unselect"
     };
-    return this._model.applyDelta(delta);
+    return this._model.applyDelta(delta, delta_operations);
   };
 
   YSelections.prototype.getSelections = function(list) {

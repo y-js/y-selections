@@ -66,6 +66,41 @@ describe "Selections Test", ->
     expect(l.ref(2).selection.from).to.equal(l.ref(1))
     expect(l.ref(2).selection.to).to.equal(l.ref(2))
 
+  it "selected two elements, checked for pointers (foreign user, new Selections instance)", ->
+    l = @yTest.users[0].val("list")
+    l_left = l.ref(1)
+    l_right = l.ref(2)
+    @yTest.users[0].val("selections", new Y.Selections())
+    sel = @yTest.users[0].val("selections")
+    sel.select(l_left, l_right, {"c": "blue"})
+    @yTest.flushAll()
+    l = @yTest.users[1].val("list")
+    expect(l.ref(1).selection.from).to.equal(l.ref(1))
+    expect(l.ref(1).selection.to).to.equal(l.ref(2))
+    expect(l.ref(2).selection.from).to.equal(l.ref(1))
+    expect(l.ref(2).selection.to).to.equal(l.ref(2))
+
+  it "selected two times two elements, checked for pointers (foreign user, new Selections instance)", ->
+    l = @yTest.users[0].val("list")
+    l_left = l.ref(1)
+    l_right = l.ref(2)
+    @yTest.users[0].val("selections", new Y.Selections())
+    sel = @yTest.users[0].val("selections")
+    sel.select(l_left, l_right, {"c": "blue"})
+    l_left = l.ref(3)
+    l_right = l.ref(4)
+    sel.select(l_left, l_right, {"c": "blue"})
+    @yTest.flushAll()
+    l = @yTest.users[1].val("list")
+    expect(l.ref(1).selection.from).to.equal(l.ref(1))
+    expect(l.ref(1).selection.to).to.equal(l.ref(2))
+    expect(l.ref(2).selection.from).to.equal(l.ref(1))
+    expect(l.ref(2).selection.to).to.equal(l.ref(2))
+    expect(l.ref(3).selection.from).to.equal(l.ref(3))
+    expect(l.ref(3).selection.to).to.equal(l.ref(4))
+    expect(l.ref(4).selection.from).to.equal(l.ref(3))
+    expect(l.ref(4).selection.to).to.equal(l.ref(4))
+
   describe "Intersection of selections:", ->
     it "intersected two elements, checked for pointers and attrs (strict inner overwrite)", ->
       l = @yTest.users[0].val("list")
@@ -1540,25 +1575,3 @@ module.exports = SelectionsTest
 
 
 module.exports = SelectionsTest
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

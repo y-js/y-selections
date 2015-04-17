@@ -16,12 +16,19 @@ class YSelections
   _setModel: (@_model)->
 
   _getCompositionValue: ()->
-    for v in @_composition_value
+    composition_value_operations = {}
+    composition_value = for v,i in @_composition_value
+      composition_value_operations[""+i+"/from"] = v.from
+      composition_value_operations[""+i+"/to"] = v.to
       {
-        from: v.from.getUid()
-        to: v.to.getUid()
         attrs: v.attrs
       }
+
+    return {
+      composition_value : composition_value
+      composition_value_operations: composition_value_operations
+    }
+
 
   _setCompositionValue: (composition_value)->
     for v in composition_value
@@ -30,8 +37,8 @@ class YSelections
 
   _apply: (delta)->
     undos = [] # list of deltas that are necessary to undo the change
-    from = @_model.HB.getOperation delta.from
-    to = @_model.HB.getOperation delta.to
+    from = delta.from
+    to = delta.to
     # notify listeners:
     observer_call =
       from: from
@@ -90,8 +97,6 @@ class YSelections
             attrs: undo_attrs_list
             type: "unselect"
 
-    if not (from? and to?)
-      console.log "wasn't able to apply the selection.."
     # Algorithm overview:
     # 1. cut off the selection that intersects with from
     # 2. cut off the selection that intersects with to
@@ -226,8 +231,8 @@ class YSelections
           for n,v of delta.attrs
             attr_list.push n
           undos.push
-            from: start.getUid()
-            to: end.getUid()
+            from: start
+            to: end
             attrs: attr_list
             type: "unselect"
           selection = createSelection start, end, delta.attrs
@@ -257,13 +262,14 @@ class YSelections
     if length <= 0
       return
 
-    delta = # probably not as easy as this
-      from: from.getUid()
-      to: to.getUid()
+    delta_operations =
+      from: from
+      to: to
+    delta =
       attrs: attrs
       type: "select"
 
-    @_model.applyDelta(delta)
+    @_model.applyDelta(delta, delta_operations)
 
   # unselect _from_, _to_ with an _attribute_
   unselect: (from, to, attrs)->
@@ -273,13 +279,14 @@ class YSelections
       throw new Error "Y.Selections.prototype.unselect expects an Array or String as the third parameter (attributes)!"
     if attrs.length <= 0
       return
-    delta = # probably not as easy as this
-      from: from.getUid()
-      to: to.getUid()
+    delta_operations =
+      from: from
+      to: to
+    delta =
       attrs: attrs
       type: "unselect"
 
-    @_model.applyDelta(delta)
+    @_model.applyDelta(delta, delta_operations)
 
   # * get all the selections of a y-list
   # * this will also test if the selections are well formed (after $from follows $to follows $from ..)
