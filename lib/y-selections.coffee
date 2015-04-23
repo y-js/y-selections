@@ -5,6 +5,8 @@ class YSelections
   constructor: ()->
     @_listeners = []
     @_composition_value = []
+    # we put all the lists we use in this array
+    @_lists = []
 
   _name: "Selections"
 
@@ -39,6 +41,38 @@ class YSelections
     undos = [] # list of deltas that are necessary to undo the change
     from = delta.from
     to = delta.to
+
+    # if never applied a delta on this list, add a listener to it in order to change selections if necessary
+    do ()=>
+      parent = from.getParent()
+      parent_exists = false
+      for p in @_lists
+        if parent is @_lists[p]
+          parent_exists = true
+          break
+      if not parent_exists
+        parent.observe (events)=>
+          for event in events
+            if event.type is "delete" and event.reference.selection?
+              ref = event.reference
+              sel = ref.selection
+              delete ref.selection # delete it, because ref is going to get deleted!
+              if sel.from is ref and sel.to is ref
+                @_removeFromCompositionValue sel
+              else if sel.from is ref
+                prev = ref.getNext()
+                sel.from = prev
+                prev.selection = sel
+              else if sel.to is ref
+                next = ref.getPrev()
+                sel.to = next
+                next.selection = sel
+              else
+                throw new Error "Found weird inconsistency! Y.Selections is no longer safe to use!"
+
+
+
+
     # notify listeners:
     observer_call =
       from: from
