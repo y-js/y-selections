@@ -300,6 +300,9 @@ class YSelections
     result = []
 
     while o.next_cl?
+      if o.isDeleted()
+        o = o.next_cl
+        continue
       if o.selection?
         if o.selection.from is o
           if sel_start?

@@ -289,6 +289,10 @@ YSelections = (function() {
     pos = 0;
     result = [];
     while (o.next_cl != null) {
+      if (o.isDeleted()) {
+        o = o.next_cl;
+        continue;
+      }
       if (o.selection != null) {
         if (o.selection.from === o) {
           if (sel_start != null) {
