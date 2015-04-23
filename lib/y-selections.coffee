@@ -1,4 +1,13 @@
 
+# compare two object for equality (no deep check!)
+compare_objects = (o, p, doAgain=true)->
+  for n,v of o
+    if not (p[n]? and p[n] is v)
+      return false
+  if doAgain
+    compare_objects(p,o,false)
+  else
+    true
 
 
 class YSelections
@@ -43,7 +52,7 @@ class YSelections
     to = delta.to
 
     # if never applied a delta on this list, add a listener to it in order to change selections if necessary
-    do ()=>
+    if delta.type is "select"
       parent = from.getParent()
       parent_exists = false
       for p in @_lists
@@ -51,27 +60,29 @@ class YSelections
           parent_exists = true
           break
       if not parent_exists
+        @_lists.push parent
         parent.observe (events)=>
           for event in events
-            if event.type is "delete" and event.reference.selection?
-              ref = event.reference
-              sel = ref.selection
-              delete ref.selection # delete it, because ref is going to get deleted!
-              if sel.from is ref and sel.to is ref
-                @_removeFromCompositionValue sel
-              else if sel.from is ref
-                prev = ref.getNext()
-                sel.from = prev
-                prev.selection = sel
-              else if sel.to is ref
-                next = ref.getPrev()
-                sel.to = next
-                next.selection = sel
-              else
-                throw new Error "Found weird inconsistency! Y.Selections is no longer safe to use!"
-
-
-
+            if event.type is "delete"
+              if event.reference.selection?
+                ref = event.reference
+                sel = ref.selection
+                delete ref.selection # delete it, because ref is going to get deleted!
+                if sel.from is ref and sel.to is ref
+                  @_removeFromCompositionValue sel
+                else if sel.from is ref
+                  prev = ref.getNext()
+                  sel.from = prev
+                  prev.selection = sel
+                else if sel.to is ref
+                  next = ref.getPrev()
+                  sel.to = next
+                  next.selection = sel
+                else
+                  throw new Error "Found weird inconsistency! Y.Selections is no longer safe to use!"
+              next = event.reference.getNext()
+              if next.selection?
+                @_combine_selection_to_left next.selection
 
     # notify listeners:
     observer_call =
@@ -135,7 +146,6 @@ class YSelections
     # 1. cut off the selection that intersects with from
     # 2. cut off the selection that intersects with to
     # 3. extend / add selections inbetween
-
     #
     #### 1. cut off the selection that intersects with from
     #
@@ -247,42 +257,6 @@ class YSelections
 
     cut_off_to()
 
-    # compare two object for equality (no deep check!)
-    compare_objects = (o, p, doAgain=true)->
-      for n,v of o
-        if not (p[n]? and p[n] is v)
-          return false
-      if doAgain
-        compare_objects(p,o,false)
-      else
-        true
-
-    # try to combine a selection, to the selection to its left (if there is any)
-    combine_selection_to_left = (sel)=>
-      first_o = sel.from.prev_cl
-      # find the first selection to the left
-      while first_o? and first_o.isDeleted() and not first_o.selection?
-        first_o = first_o.prev_cl
-      if not (first_o? and first_o.selection?)
-        # there is no selection to the left
-        return
-      else
-        if compare_objects(first_o.selection.attrs, sel.attrs)
-          # we are going to remove the left selection
-          # First, remove every trace of first_o.selection (save what is necessary)
-          # Then, re-set sel.from
-          #
-          new_from = first_o.selection.from
-          @_removeFromCompositionValue first_o.selection
-
-          if sel.from isnt sel.to
-            delete sel.from.selection
-
-          sel.from = new_from
-          new_from.selection = sel
-        else
-          return
-
     # 3. extend / add selections in between
     o = from
     while (o isnt to.next_cl)
@@ -290,7 +264,7 @@ class YSelections
         # just extend the existing selection
         extendSelection o.selection, delta # will push undo-deltas to $undos
         selection = o.selection
-        combine_selection_to_left selection
+        @_combine_selection_to_left selection
 
         o = selection.to.next_cl
         selection_is_empty = true
@@ -317,7 +291,7 @@ class YSelections
           selection = createSelection start, end, delta.attrs
           start.selection = selection
           end.selection = selection
-          combine_selection_to_left o.selection
+          @_combine_selection_to_left o.selection
         o = o.next_cl
 
     # find the next selection
@@ -325,10 +299,10 @@ class YSelections
       o = o.next_cl
     # and check if you can combine it
     if o.selection?
-      combine_selection_to_left o.selection
+      @_combine_selection_to_left o.selection
     # also re-connect from
     if from.selection?
-      combine_selection_to_left from.selection
+      @_combine_selection_to_left from.selection
 
     return delta # it is necessary that delta is returned in the way it was applied on the global delta.
     # so that yjs knows exactly what was applied (and how to undo it).
@@ -338,6 +312,32 @@ class YSelections
       o isnt sel
     delete sel.from.selection
     delete sel.to.selection
+
+  # try to combine a selection, to the selection to its left (if there is any)
+  _combine_selection_to_left: (sel)->
+    first_o = sel.from.prev_cl
+    # find the first selection to the left
+    while first_o? and first_o.isDeleted() and not first_o.selection?
+      first_o = first_o.prev_cl
+    if not (first_o? and first_o.selection?)
+      # there is no selection to the left
+      return
+    else
+      if compare_objects(first_o.selection.attrs, sel.attrs)
+        # we are going to remove the left selection
+        # First, remove every trace of first_o.selection (save what is necessary)
+        # Then, re-set sel.from
+        #
+        new_from = first_o.selection.from
+        @_removeFromCompositionValue first_o.selection
+
+        if sel.from isnt sel.to
+          delete sel.from.selection
+
+        sel.from = new_from
+        new_from.selection = sel
+      else
+        return
 
   # "undo" a delta from the composition_value
   _unapply: (deltas)->
@@ -397,6 +397,8 @@ class YSelections
 
     while o.next_cl?
       if o.isDeleted()
+        if o.selection?
+          throw new Error "You forgot to delete the selection from this operation! y-selections is no longer safe to use!"
         o = o.next_cl
         continue
       if o.selection?
