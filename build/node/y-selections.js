@@ -54,7 +54,7 @@ YSelections = (function() {
   };
 
   YSelections.prototype._apply = function(delta) {
-    var attr_list, createSelection, cut_off_from, cut_off_to, end, extendSelection, from, j, l, len, n, o, observer_call, ref, ref1, selection, start, to, undos, v;
+    var attr, attr_list, combine_selection_to_left, compare_objects, createSelection, cut_off_from, cut_off_to, end, extendSelection, from, j, l, len, n, o, observer_call, ref, ref1, selection, selection_is_empty, start, to, undos, v;
     undos = [];
     from = delta.from;
     to = delta.to;
@@ -194,11 +194,62 @@ YSelections = (function() {
       return new_selection.to.selection = new_selection;
     };
     cut_off_to();
+    compare_objects = function(o, p, doAgain) {
+      var n, v;
+      if (doAgain == null) {
+        doAgain = true;
+      }
+      for (n in o) {
+        v = o[n];
+        if (!((p[n] != null) && p[n] === v)) {
+          return false;
+        }
+      }
+      if (doAgain) {
+        return compare_objects(p, o, false);
+      } else {
+        return true;
+      }
+    };
+    combine_selection_to_left = (function(_this) {
+      return function(sel) {
+        var first_o, new_from;
+        first_o = sel.from.prev_cl;
+        while ((first_o != null) && first_o.isDeleted() && (first_o.selection == null)) {
+          first_o = first_o.prev_cl;
+        }
+        if (!((first_o != null) && (first_o.selection != null))) {
+
+        } else {
+          if (compare_objects(first_o.selection.attrs, sel.attrs)) {
+            new_from = first_o.selection.from;
+            _this._removeFromCompositionValue(first_o.selection);
+            if (sel.from !== sel.to) {
+              delete sel.from.selection;
+            }
+            sel.from = new_from;
+            return new_from.selection = sel;
+          } else {
+
+          }
+        }
+      };
+    })(this);
     o = from;
     while (o !== to.next_cl) {
       if (o.selection != null) {
         extendSelection(o.selection, delta);
-        o = o.selection.to.next_cl;
+        selection = o.selection;
+        combine_selection_to_left(selection);
+        o = selection.to.next_cl;
+        selection_is_empty = true;
+        for (attr in selection.attrs) {
+          selection_is_empty = false;
+          break;
+        }
+        if (selection_is_empty) {
+          this._removeFromCompositionValue(selection);
+        }
       } else {
         start = o;
         while ((o.next_cl.selection == null) && (o !== to)) {
@@ -221,11 +272,29 @@ YSelections = (function() {
           selection = createSelection(start, end, delta.attrs);
           start.selection = selection;
           end.selection = selection;
+          combine_selection_to_left(o.selection);
         }
         o = o.next_cl;
       }
     }
+    while (o.isDeleted() && (o.selection == null)) {
+      o = o.next_cl;
+    }
+    if (o.selection != null) {
+      combine_selection_to_left(o.selection);
+    }
+    if (from.selection != null) {
+      combine_selection_to_left(from.selection);
+    }
     return delta;
+  };
+
+  YSelections.prototype._removeFromCompositionValue = function(sel) {
+    this._composition_value = this._composition_value.filter(function(o) {
+      return o !== sel;
+    });
+    delete sel.from.selection;
+    return delete sel.to.selection;
   };
 
   YSelections.prototype._unapply = function(deltas) {

@@ -213,13 +213,58 @@ class YSelections
 
     cut_off_to()
 
+    # compare two object for equality (no deep check!)
+    compare_objects = (o, p, doAgain=true)->
+      for n,v of o
+        if not (p[n]? and p[n] is v)
+          return false
+      if doAgain
+        compare_objects(p,o,false)
+      else
+        true
+
+    # try to combine a selection, to the selection to its left (if there is any)
+    combine_selection_to_left = (sel)=>
+      first_o = sel.from.prev_cl
+      # find the first selection to the left
+      while first_o? and first_o.isDeleted() and not first_o.selection?
+        first_o = first_o.prev_cl
+      if not (first_o? and first_o.selection?)
+        # there is no selection to the left
+        return
+      else
+        if compare_objects(first_o.selection.attrs, sel.attrs)
+          # we are going to remove the left selection
+          # First, remove every trace of first_o.selection (save what is necessary)
+          # Then, re-set sel.from
+          #
+          new_from = first_o.selection.from
+          @_removeFromCompositionValue first_o.selection
+
+          if sel.from isnt sel.to
+            delete sel.from.selection
+
+          sel.from = new_from
+          new_from.selection = sel
+        else
+          return
+
     # 3. extend / add selections in between
     o = from
     while (o isnt to.next_cl)
       if o.selection?
         # just extend the existing selection
         extendSelection o.selection, delta # will push undo-deltas to $undos
-        o = o.selection.to.next_cl
+        selection = o.selection
+        combine_selection_to_left selection
+
+        o = selection.to.next_cl
+        selection_is_empty = true
+        for attr of selection.attrs
+          selection_is_empty = false
+          break
+        if selection_is_empty
+          @_removeFromCompositionValue selection
       else
         # create a new selection (until you find the next one)
         start = o
@@ -238,10 +283,27 @@ class YSelections
           selection = createSelection start, end, delta.attrs
           start.selection = selection
           end.selection = selection
+          combine_selection_to_left o.selection
         o = o.next_cl
 
+    # find the next selection
+    while o.isDeleted() and (not o.selection?)
+      o = o.next_cl
+    # and check if you can combine it
+    if o.selection?
+      combine_selection_to_left o.selection
+    # also re-connect from
+    if from.selection?
+      combine_selection_to_left from.selection
+
     return delta # it is necessary that delta is returned in the way it was applied on the global delta.
-    # so that yjs can know exactly what was applied.
+    # so that yjs knows exactly what was applied (and how to undo it).
+
+  _removeFromCompositionValue: (sel)->
+    @_composition_value = @_composition_value.filter (o)->
+      o isnt sel
+    delete sel.from.selection
+    delete sel.to.selection
 
   # "undo" a delta from the composition_value
   _unapply: (deltas)->
