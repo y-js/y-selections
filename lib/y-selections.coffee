@@ -360,9 +360,6 @@ class YSelections
           @_combine_selection_to_left elem.selection
         elem = elem.getNext()
 
-    # find the next selection
-    while elem.isDeleted() and (not elem.selection?)
-      elem = elem.next_cl
     # and check if you can combine it
     if elem.selection?
       @_combine_selection_to_left elem.selection
