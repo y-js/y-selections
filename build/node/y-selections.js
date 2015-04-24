@@ -1,18 +1,18 @@
 var YSelections, compare_objects;
 
-compare_objects = function(o, p, doAgain) {
-  var n, v;
+compare_objects = function(obj1, obj2, doAgain) {
+  var key, value;
   if (doAgain == null) {
     doAgain = true;
   }
-  for (n in o) {
-    v = o[n];
-    if (!((p[n] != null) && p[n] === v)) {
+  for (key in obj1) {
+    value = obj1[key];
+    if (!((obj2[key] != null) && obj2[key] === value)) {
       return false;
     }
   }
   if (doAgain) {
-    return compare_objects(p, o, false);
+    return compare_objects(obj2, obj1, false);
   } else {
     return true;
   }
@@ -39,18 +39,18 @@ YSelections = (function() {
   };
 
   YSelections.prototype._getCompositionValue = function() {
-    var composition_value, composition_value_operations, i, v;
+    var composition_value, composition_value_operations, index, value;
     composition_value_operations = {};
     composition_value = (function() {
-      var j, len, ref1, results;
+      var i, len, ref1, results;
       ref1 = this._composition_value;
       results = [];
-      for (i = j = 0, len = ref1.length; j < len; i = ++j) {
-        v = ref1[i];
-        composition_value_operations["" + i + "/from"] = v.from;
-        composition_value_operations["" + i + "/to"] = v.to;
+      for (index = i = 0, len = ref1.length; i < len; index = ++i) {
+        value = ref1[index];
+        composition_value_operations["" + index + "/from"] = value.from;
+        composition_value_operations["" + index + "/to"] = value.to;
         results.push({
-          attrs: v.attrs
+          attrs: value.attrs
         });
       }
       return results;
@@ -62,18 +62,18 @@ YSelections = (function() {
   };
 
   YSelections.prototype._setCompositionValue = function(composition_value) {
-    var j, len, results, v;
+    var i, len, results, value;
     results = [];
-    for (j = 0, len = composition_value.length; j < len; j++) {
-      v = composition_value[j];
-      v.type = "select";
-      results.push(this._apply(v));
+    for (i = 0, len = composition_value.length; i < len; i++) {
+      value = composition_value[i];
+      value.type = "select";
+      results.push(this._apply(value));
     }
     return results;
   };
 
   YSelections.prototype._apply = function(delta) {
-    var a, attr, attr_list, createSelection, cut_off_from, cut_off_to, delta_has_attrs, end, extendSelection, from, j, k, l, len, len1, n, o, o_next, observer_call, p, parent, parent_exists, ref1, ref2, ref3, selection, selection_is_empty, start, to, to_next, undos, v;
+    var a, attr, attr_list, createSelection, cut_off_from, cut_off_to, delta_has_attrs, elem, elem_next, end, extendSelection, from, i, j, len, len1, listener, n, observer_call, p, parent, parent_exists, ref1, ref2, ref3, selection, selection_is_empty, start, to, to_next, undos, v;
     undos = [];
     if (delta.from.isDeleted()) {
       delta.from = delta.from.getNext();
@@ -90,8 +90,8 @@ YSelections = (function() {
       parent = from.getParent();
       parent_exists = false;
       ref1 = this._lists;
-      for (j = 0, len = ref1.length; j < len; j++) {
-        p = ref1[j];
+      for (i = 0, len = ref1.length; i < len; i++) {
+        p = ref1[i];
         if (parent === this._lists[p]) {
           parent_exists = true;
           break;
@@ -101,10 +101,10 @@ YSelections = (function() {
         this._lists.push(parent);
         parent.observe((function(_this) {
           return function(events) {
-            var event, k, len1, next, prev, ref, results, sel;
+            var event, j, len1, next, prev, ref, results, sel;
             results = [];
-            for (k = 0, len1 = events.length; k < len1; k++) {
-              event = events[k];
+            for (j = 0, len1 = events.length; j < len1; j++) {
+              event = events[j];
               if (event.type === "delete") {
                 if (event.reference.selection != null) {
                   ref = event.reference;
@@ -113,13 +113,13 @@ YSelections = (function() {
                   if (sel.from === ref && sel.to === ref) {
                     _this._removeFromCompositionValue(sel);
                   } else if (sel.from === ref) {
-                    prev = ref.getNext();
-                    sel.from = prev;
-                    prev.selection = sel;
-                  } else if (sel.to === ref) {
-                    next = ref.getPrev();
-                    sel.to = next;
+                    next = ref.getNext();
+                    sel.from = next;
                     next.selection = sel;
+                  } else if (sel.to === ref) {
+                    prev = ref.getPrev();
+                    sel.to = prev;
+                    prev.selection = sel;
                   } else {
                     throw new Error("Found weird inconsistency! Y.Selections is no longer safe to use!");
                   }
@@ -146,17 +146,17 @@ YSelections = (function() {
       attrs: delta.attrs
     };
     ref2 = this._listeners;
-    for (k = 0, len1 = ref2.length; k < len1; k++) {
-      l = ref2[k];
-      l.call(this, observer_call);
+    for (j = 0, len1 = ref2.length; j < len1; j++) {
+      listener = ref2[j];
+      listener.call(this, observer_call);
     }
     createSelection = (function(_this) {
       return function(from, to, attrs) {
-        var n, new_attrs, new_sel, v;
+        var key, new_attrs, new_sel, value;
         new_attrs = {};
-        for (n in attrs) {
-          v = attrs[n];
-          new_attrs[n] = v;
+        for (key in attrs) {
+          value = attrs[key];
+          new_attrs[key] = value;
         }
         new_sel = {
           from: from,
@@ -168,16 +168,16 @@ YSelections = (function() {
       };
     })(this);
     extendSelection = function(selection) {
-      var len2, m, n, ref3, ref4, ref5, undo_attrs, undo_attrs_list, undo_need_select, undo_need_unselect, v;
+      var k, key, len2, n, ref3, ref4, ref5, undo_attrs, undo_attrs_list, undo_need_select, undo_need_unselect, v, value;
       if (delta.type === "unselect") {
         undo_attrs = {};
         ref3 = delta.attrs;
-        for (m = 0, len2 = ref3.length; m < len2; m++) {
-          n = ref3[m];
-          if (selection.attrs[n] != null) {
-            undo_attrs[n] = selection.attrs[n];
+        for (k = 0, len2 = ref3.length; k < len2; k++) {
+          key = ref3[k];
+          if (selection.attrs[key] != null) {
+            undo_attrs[key] = selection.attrs[key];
           }
-          delete selection.attrs[n];
+          delete selection.attrs[key];
         }
         return undos.push({
           from: delta.from,
@@ -192,29 +192,29 @@ YSelections = (function() {
         undo_need_select = false;
         if ((delta.overwrite != null) && delta.overwrite) {
           ref4 = selection.attrs;
-          for (n in ref4) {
-            v = ref4[n];
+          for (key in ref4) {
+            value = ref4[key];
             if (delta.attrs[n] == null) {
               undo_need_select = true;
-              undo_attrs[n] = v;
+              undo_attrs[key] = value;
             }
           }
           for (n in undo_attrs) {
             v = undo_attrs[n];
-            delete selection.attrs[n];
+            delete selection.attrs[key];
           }
         }
         ref5 = delta.attrs;
-        for (n in ref5) {
-          v = ref5[n];
-          if (selection.attrs[n] != null) {
-            undo_attrs[n] = selection.attrs[n];
+        for (key in ref5) {
+          value = ref5[key];
+          if (selection.attrs[key] != null) {
+            undo_attrs[key] = selection.attrs[key];
             undo_need_select = true;
           } else {
-            undo_attrs_list.push(n);
+            undo_attrs_list.push(key);
             undo_need_unselect = true;
           }
-          selection.attrs[n] = v;
+          selection.attrs[key] = value;
         }
         if (undo_need_select) {
           undos.push({
@@ -235,23 +235,23 @@ YSelections = (function() {
       }
     };
     cut_off_from = function() {
-      var new_selection, o, old_selection, opt_selection;
+      var element, new_selection, old_selection, opt_selection;
       if ((from.selection != null) && from.selection.from === from) {
         return;
       }
-      o = from.getPrev();
-      while ((o.selection == null) && (o.type !== "Delimiter")) {
-        o = o.getPrev();
+      element = from.prev_cl;
+      while ((element.selection == null) && (element.type !== "Delimiter")) {
+        element = element.prev_cl;
       }
-      if ((o.selection == null) || o.selection.to === o) {
+      if ((element.selection == null) || element.selection.to === element) {
         return;
       }
-      old_selection = o.selection;
-      o = from;
-      while ((o !== old_selection.to) && (o !== to)) {
-        o = o.getNext();
+      old_selection = element.selection;
+      element = from;
+      while ((element !== old_selection.to) && (element !== to)) {
+        element = element.getNext();
       }
-      if (o === old_selection.to) {
+      if (element === old_selection.to) {
         new_selection = createSelection(from, old_selection.to, old_selection.attrs);
         old_selection.to = from.getPrev();
         old_selection.to.selection = old_selection;
@@ -270,18 +270,18 @@ YSelections = (function() {
     };
     cut_off_from();
     cut_off_to = function() {
-      var new_selection, o, old_selection;
+      var element, new_selection, old_selection;
       if ((to.selection != null) && to.selection.to === to) {
         return;
       }
-      o = to;
-      while ((o.selection == null) && (o !== from)) {
-        o = o.getPrev();
+      element = to;
+      while ((element.selection == null) && (element !== from)) {
+        element = element.getPrev();
       }
-      if ((o.selection == null) || o.selection["to"] === o) {
+      if ((element.selection == null) || element.selection["to"] === element) {
         return;
       }
-      old_selection = o.selection;
+      old_selection = element.selection;
       new_selection = createSelection(to.getNext(), old_selection.to, old_selection.attrs);
       old_selection.to = to;
       old_selection.to.selection = old_selection;
@@ -294,14 +294,14 @@ YSelections = (function() {
       delta_has_attrs = true;
       break;
     }
-    o = from;
+    elem = from;
     to_next = to.getNext();
-    while (o !== to_next) {
-      if (o.selection != null) {
-        extendSelection(o.selection, delta);
-        selection = o.selection;
+    while (elem !== to_next) {
+      if (elem.selection != null) {
+        extendSelection(elem.selection, delta);
+        selection = elem.selection;
         this._combine_selection_to_left(selection);
-        o = selection.to.getNext();
+        elem = selection.to.getNext();
         selection_is_empty = true;
         for (attr in selection.attrs) {
           selection_is_empty = false;
@@ -311,13 +311,13 @@ YSelections = (function() {
           this._removeFromCompositionValue(selection);
         }
       } else {
-        start = o;
-        o_next = o.getNext();
-        while ((o_next.selection == null) && (o !== to)) {
-          o = o_next;
-          o_next = o.getNext();
+        start = elem;
+        elem_next = elem.getNext();
+        while ((elem_next.selection == null) && (elem !== to)) {
+          elem = elem_next;
+          elem_next = elem.getNext();
         }
-        end = o;
+        end = elem;
         if (delta.type !== "unselect" && delta_has_attrs) {
           attr_list = [];
           ref3 = delta.attrs;
@@ -334,13 +334,13 @@ YSelections = (function() {
           selection = createSelection(start, end, delta.attrs);
           start.selection = selection;
           end.selection = selection;
-          this._combine_selection_to_left(o.selection);
+          this._combine_selection_to_left(elem.selection);
         }
-        o = o.getNext();
+        elem = elem.getNext();
       }
     }
-    if (o.selection != null) {
-      this._combine_selection_to_left(o.selection);
+    if (elem.selection != null) {
+      this._combine_selection_to_left(elem.selection);
     }
     if (from.selection != null) {
       this._combine_selection_to_left(from.selection);
@@ -348,18 +348,18 @@ YSelections = (function() {
     return undos;
   };
 
-  YSelections.prototype._removeFromCompositionValue = function(sel) {
-    this._composition_value = this._composition_value.filter(function(o) {
-      return o !== sel;
+  YSelections.prototype._removeFromCompositionValue = function(selectionToRemove) {
+    this._composition_value = this._composition_value.filter(function(sel) {
+      return sel !== selectionToRemove;
     });
-    delete sel.from.selection;
-    return delete sel.to.selection;
+    delete selectionToRemove.from.selection;
+    return delete selectionToRemove.to.selection;
   };
 
   YSelections.prototype._combine_selection_to_left = function(sel) {
-    var first_o, new_from;
-    first_o = sel.from.getPrev();
-    if (first_o.selection == null) {
+    var first_elem, new_from;
+    first_elem = sel.from.getPrev();
+    if (first_elem.selection == null) {
 
     } else {
       if (compare_objects(first_o.selection.attrs, sel.attrs)) {
@@ -377,9 +377,9 @@ YSelections = (function() {
   };
 
   YSelections.prototype._unapply = function(deltas) {
-    var delta, j, len;
-    for (j = 0, len = deltas.length; j < len; j++) {
-      delta = deltas[j];
+    var delta, i, len;
+    for (i = 0, len = deltas.length; i < len; i++) {
+      delta = deltas[i];
       this._apply(delta);
     }
   };
@@ -435,38 +435,38 @@ YSelections = (function() {
   };
 
   YSelections.prototype.getSelections = function(list) {
-    var attrs, n, number_of_attrs, o, pos, ref1, result, sel_start, v;
-    o = list.ref(0);
-    if (o == null) {
+    var attrs, element, key, number_of_attrs, pos, ref1, result, sel_start, value;
+    element = list.ref(0);
+    if (element == null) {
       return [];
     }
     sel_start = null;
     pos = 0;
     result = [];
-    while (o.next_cl != null) {
-      if (o.isDeleted()) {
-        if (o.selection != null) {
+    while (element.next_cl != null) {
+      if (element.isDeleted()) {
+        if (element.selection != null) {
           console.log("You forgot to delete the selection from this operation! Please write an issue how to reproduce this bug! (it could lead to inconsistencies!)");
         }
-        o = o.next_cl;
+        element = element.next_cl;
         continue;
       }
-      if (o.selection != null) {
-        if (o.selection.from === o) {
+      if (element.selection != null) {
+        if (element.selection.from === element) {
           if (sel_start != null) {
             throw new Error("Found two consecutive from elements. The selections are no longer safe to use! (contact the owner of the repository)");
           } else {
             sel_start = pos;
           }
         }
-        if (o.selection.to === o) {
+        if (element.selection.to === element) {
           if (sel_start != null) {
             number_of_attrs = 0;
             attrs = {};
-            ref1 = o.selection.attrs;
-            for (n in ref1) {
-              v = ref1[n];
-              attrs[n] = v;
+            ref1 = element.selection.attrs;
+            for (key in ref1) {
+              value = ref1[key];
+              attrs[key] = value;
             }
             result.push({
               from: sel_start,
@@ -477,23 +477,23 @@ YSelections = (function() {
           } else {
             throw new Error("Found two consecutive to elements. The selections are no longer safe to use! (contact the owner of the repository)");
           }
-        } else if (o.selection.from !== o) {
+        } else if (element.selection.from !== element) {
           throw new Error("This reference should not point to this selection, because the selection does not point to the reference. The selections are no longer safe to use! (contact the owner of the repository)");
         }
       }
       pos++;
-      o = o.next_cl;
+      element = element.next_cl;
     }
     return result;
   };
 
-  YSelections.prototype.observe = function(f) {
-    return this._listeners.push(f);
+  YSelections.prototype.observe = function(fun) {
+    return this._listeners.push(fun);
   };
 
-  YSelections.prototype.unobserve = function(f) {
-    return this._listeners = this._listeners.filter(function(g) {
-      return f !== g;
+  YSelections.prototype.unobserve = function(fun) {
+    return this._listeners = this._listeners.filter(function(otherFun) {
+      return fun !== otherFun;
     });
   };
 
