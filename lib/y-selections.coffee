@@ -482,8 +482,9 @@ class YSelections
       # check that a deleted element has no selection bounded anymore
       if element.isDeleted()
         if element.selection?
-          throw new Error "You forgot to delete the selection from this
-            operation! y-selections is no longer safe to use!"
+          console.log "You forgot to delete the selection from this operation!
+            Please write an issue how to reproduce this bug! (it could lead to
+            inconsistencies!)"
         # deleted element, jump to element
         element = element.next_cl
         continue
