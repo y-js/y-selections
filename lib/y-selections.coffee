@@ -18,13 +18,19 @@ class YSelections
 
   _name: "Selections"
 
+  # Get the yjs model (called by yjs)
+  # @return [Model] return the model
   _getModel: (Y, Operation) ->
     if not @_model?
       @_model = new Operation.Composition(@, []).execute()
     @_model
 
+  # Set the yjs model (called by yjs)
+  # @param model [Model] the model to set
   _setModel: (@_model)->
 
+  # ???
+  # @return [Object] an object .composition_value and .composition_value_operations
   _getCompositionValue: ()->
     composition_value_operations = {}
     composition_value = for value, index in @_composition_value
@@ -39,12 +45,17 @@ class YSelections
       composition_value_operations: composition_value_operations
     }
 
-
+  # ???
   _setCompositionValue: (composition_value)->
     for value in composition_value
       value.type = "select"
       @_apply value
 
+  # Apply a delta
+  # @param delta [Object] the delta to apply
+  # @option delta [Y.List item] from the start of the delta
+  # @option delta [Y.List item] to the end of the delta
+  # @option delta [String] type either "select" or "unselect"
   _apply: (delta)->
     undos = [] # list of deltas that are necessary to undo the change
 
@@ -238,6 +249,7 @@ class YSelections
         # update references (pointers to respective selections)
         old_selection.to.selection = old_selection
 
+        # set references of new_selection
         new_selection.from.selection = new_selection
         new_selection.to.selection = new_selection
       else
@@ -348,6 +360,10 @@ class YSelections
           @_combine_selection_to_left elem.selection
         elem = elem.getNext()
 
+    # find the next selection
+    while elem.isDeleted() and (not elem.selection?)
+      elem = elem.next_cl
+    # and check if you can combine it
     if elem.selection?
       @_combine_selection_to_left elem.selection
     # also re-connect from
@@ -357,13 +373,18 @@ class YSelections
     return undos # it is necessary that delta is returned in the way it was applied on the global delta.
     # so that yjs knows exactly what was applied (and how to undo it).
 
-  _removeFromCompositionValue: (sel)->
-    @_composition_value = @_composition_value.filter (s)->
-      s isnt sel
-    delete sel.from.selection
-    delete sel.to.selection
+  # ???
+  _removeFromCompositionValue: (selectionToRemove)->
+    @_composition_value = @_composition_value.filter (sel)->
+      sel isnt selectionToRemove
+    delete selectionToRemove.from.selection
+    delete selectionToRemove.to.selection
 
-  # try to combine a selection, to the selection to its left (if there is any)
+  # Try to combine a selection to the selection to its left (if any)
+  # @param [Option] selection the selection to try to combine
+  # @param selection [Y.List item] from the start of the selection
+  # @param selection [Y.List item] to the end of the selection
+  # @param selection [Object] attrs the attributes of the selection
   _combine_selection_to_left: (sel)->
     first_elem = sel.from.getPrev()
     if not first_elem.selection?
@@ -375,7 +396,6 @@ class YSelections
         # we are going to remove the left selection
         # First, remove every trace of first_o.selection (save what is necessary)
         # Then, re-set sel.from
-        #
         new_from = first_o.selection.from
         @_removeFromCompositionValue first_o.selection
 
@@ -389,17 +409,19 @@ class YSelections
       else
         return
 
-  # "undo" a delta from the composition_value
+  # Apply undoing deltas (does the same as _apply)
+  # @param deltas [Array<Delta>] the deltas to unapply
   _unapply: (deltas)->
-    # _apply returns a _list_ of deltas, that are neccessary to undo the change. Now we _apply every delta in the list (and discard the results)
+    # _apply returns a _list_ of deltas, that are necessary to undo the change.
+    # Now we _apply every delta in the list (and discard the results)
     for delta in deltas
       @_apply delta
     return
 
-  # update the globalDelta with delta
-
-
-  # select _from_, _to_ with an _attribute_
+  # select _from_ _to_ with an _attribute_
+  # @param from [Y.List item] the start of the selection
+  # @param to [Y.List item] the end of the selection
+  # @param attrs [Object] the attributes of the selection
   select: (from, to, attrs, overwrite)->
     length = 0
     for a of attrs
@@ -423,7 +445,11 @@ class YSelections
   unselectAll: (from, to)->
     select from, to, {}, true
 
-  # unselect _from_, _to_ with an _attribute_
+  # unselect _from_ _to_ with an _attribute_, resulting in the removal of the
+  # of any selection within these bounds.
+  # @param from [Y.List item] the start of the selection
+  # @param to [Y.List item] the end of the selection
+  # @param attrs [Object] the attributes of the selection
   unselect: (from, to, attrs)->
     if typeof attrs is "string"
       attrs = [attrs]
@@ -441,8 +467,10 @@ class YSelections
 
     @_model.applyDelta(delta, delta_operations)
 
-  # * get all the selections of a y-list
-  # * this will also test if the selections are well formed (after $from follows $to follows $from ..)
+  # Get all the selections covering the argument
+  # @param list [Y.List] a doubly-chained list of items where to look for selections
+  # @return [Array<Selection>]
+  # @note the function also check the consistency of the selections
   getSelections: (list)->
     element = list.ref(0)
     if not element?
@@ -495,9 +523,13 @@ class YSelections
       element = element.next_cl
     return result
 
+  # Observe the selection with the function
+  # @param fun [Function] the listening function
   observe: (fun)->
     @_listeners.push fun
 
+  # Remove the function from the observers
+  # @param fun [Function] the function to remove
   unobserve: (fun)->
     @_listeners = @_listeners.filter (otherFun)->
       fun != otherFun
