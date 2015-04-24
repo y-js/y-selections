@@ -37,7 +37,9 @@ var ysel = new Y.Selections()
 * .select(from, to, attrs)
   * Assign a set of attributes to a range. This method expects *references* (see y-list documentation) as the first two parameters (from, and to), and *attrs* should be an _Object_. Make sure that *from* is a predecessor of *to*!
 * .unselect(from, to, attrs)
-  * Remove a set of attributes from a range. This method expects *references* (see y-list documentation) as the first two parametrs (from, and to), and *attrs* should be an _Array_. Make sure that *from* is a predecessor of *to*
+  * Remove a set of attributes from a range. This method expects *references* (see y-list documentation) as the first two parametrs (from, and to), and *attrs* should be an _Array_. Make sure that *from* is a predecessor of *to*!
+* .unselectAll(from, to)
+  * Remove all attributes from a range. This method expects *references* (see y-list documentation) as the first two parametrs (from, and to). Make sure that *from* is a predecessor of *to*!
 * .observe(f)
   * The observer is called whenever something on this text object changed. (throws select, and unselect events)
 * .unobserve(f)

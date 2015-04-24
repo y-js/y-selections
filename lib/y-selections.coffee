@@ -48,9 +48,28 @@ class YSelections
 
   _apply: (delta)->
     undos = [] # list of deltas that are necessary to undo the change
+
+    if delta.from.isDeleted()
+      delta.from = delta.from.getNext()
+    if delta.to.isDeleted()
+      delta.to = delta.to.getPrev()
+
     from = delta.from
     to = delta.to
+    if from.getPrev() is to
+      # There is nothing to select anymore!
+      return undos
 
+
+    #
+    # Assuming $from is deleted at some point. We need to change the selection
+    # _before_ the GC removes it completely from the list. Therefore, we listen to
+    # "delete" events, and if that particular operation has a selection
+    # (o.sselection?) we move the selection to the next undeleted operation, if
+    # any. It also handles the case that there is nothing to select anymore (e.g.
+    # everything inside the selection is deleted). Then we remove the selection
+    # completely
+    #
     # if never applied a delta on this list, add a listener to it in order to change selections if necessary
     if delta.type is "select"
       parent = from.getParent()
@@ -121,6 +140,18 @@ class YSelections
         undo_attrs_list = [] # for undo selection (not overwrite)
         undo_need_unselect = false
         undo_need_select = false
+        if delta.overwrite? and delta.overwrite
+          # overwrite everything that the delta doesn't expect
+          for n,v of selection.attrs
+            if not delta.attrs[n]?
+              undo_need_select = true
+              undo_attrs[n] = v
+              # must not delete attributes of $selection.attrs in this loop,
+              # so we do it in the next one
+          for n,v of undo_attrs
+            delete selection.attrs[n]
+
+        # apply the delta on the selection
         for n,v of delta.attrs
           if selection.attrs[n]?
             undo_attrs[n] = selection.attrs[n]
@@ -131,14 +162,14 @@ class YSelections
           selection.attrs[n] = v
         if undo_need_select
           undos.push
-            from: delta.from
-            to: delta.to
+            from: selection.from
+            to: selection.to
             attrs: undo_attrs
             type: "select"
         if undo_need_unselect
           undos.push
-            from: delta.from
-            to: delta.to
+            from: selection.from
+            to: selection.to
             attrs: undo_attrs_list
             type: "unselect"
 
@@ -241,7 +272,6 @@ class YSelections
       #   - will be changed in such a way that it is to the left of $to
       # new_selection is outer ( outer $from and $to)
       #   - created, right after $to
-
       old_selection = o.selection
 
       # create $new_selection
@@ -304,7 +334,7 @@ class YSelections
     if from.selection?
       @_combine_selection_to_left from.selection
 
-    return delta # it is necessary that delta is returned in the way it was applied on the global delta.
+    return undos # it is necessary that delta is returned in the way it was applied on the global delta.
     # so that yjs knows exactly what was applied (and how to undo it).
 
   _removeFromCompositionValue: (sel)->
@@ -350,22 +380,29 @@ class YSelections
 
 
   # select _from_, _to_ with an _attribute_
-  select: (from, to, attrs)->
+  select: (from, to, attrs, overwrite)->
     length = 0
     for a of attrs
       length++
       break
-    if length <= 0
+    if length <= 0 and not (overwrite? and overwrite)
       return
 
     delta_operations =
       from: from
       to: to
+
     delta =
       attrs: attrs
       type: "select"
 
+    if overwrite? and overwrite
+      delta.overwrite = true
+
     @_model.applyDelta(delta, delta_operations)
+
+  unselectAll: (from, to)->
+    select from, to, {}, true
 
   # unselect _from_, _to_ with an _attribute_
   unselect: (from, to, attrs)->
