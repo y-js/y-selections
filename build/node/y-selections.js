@@ -75,8 +75,17 @@ YSelections = (function() {
   YSelections.prototype._apply = function(delta) {
     var attr, attr_list, createSelection, cut_off_from, cut_off_to, end, extendSelection, from, j, k, l, len, len1, n, o, observer_call, p, parent, parent_exists, ref1, ref2, ref3, selection, selection_is_empty, start, to, undos, v;
     undos = [];
+    if (delta.from.isDeleted()) {
+      delta.from = delta.from.getNext();
+    }
+    if (delta.to.isDeleted()) {
+      delta.to = delta.to.getPrev();
+    }
     from = delta.from;
     to = delta.to;
+    if (from.getPrev() === to) {
+      return undos;
+    }
     if (delta.type === "select") {
       parent = from.getParent();
       parent_exists = false;
@@ -159,7 +168,7 @@ YSelections = (function() {
       };
     })(this);
     extendSelection = function(selection) {
-      var len2, m, n, ref3, ref4, undo_attrs, undo_attrs_list, undo_need_select, undo_need_unselect, v;
+      var len2, m, n, ref3, ref4, ref5, undo_attrs, undo_attrs_list, undo_need_select, undo_need_unselect, v;
       if (delta.type === "unselect") {
         undo_attrs = {};
         ref3 = delta.attrs;
@@ -181,9 +190,23 @@ YSelections = (function() {
         undo_attrs_list = [];
         undo_need_unselect = false;
         undo_need_select = false;
-        ref4 = delta.attrs;
-        for (n in ref4) {
-          v = ref4[n];
+        if ((delta.overwrite != null) && delta.overwrite) {
+          ref4 = selection.attrs;
+          for (n in ref4) {
+            v = ref4[n];
+            if (delta.attrs[n] == null) {
+              undo_need_select = true;
+              undo_attrs[n] = v;
+            }
+          }
+          for (n in undo_attrs) {
+            v = undo_attrs[n];
+            delete selection.attrs[n];
+          }
+        }
+        ref5 = delta.attrs;
+        for (n in ref5) {
+          v = ref5[n];
           if (selection.attrs[n] != null) {
             undo_attrs[n] = selection.attrs[n];
             undo_need_select = true;
@@ -195,16 +218,16 @@ YSelections = (function() {
         }
         if (undo_need_select) {
           undos.push({
-            from: delta.from,
-            to: delta.to,
+            from: selection.from,
+            to: selection.to,
             attrs: undo_attrs,
             type: "select"
           });
         }
         if (undo_need_unselect) {
           return undos.push({
-            from: delta.from,
-            to: delta.to,
+            from: selection.from,
+            to: selection.to,
             attrs: undo_attrs_list,
             type: "unselect"
           });
@@ -317,7 +340,7 @@ YSelections = (function() {
     if (from.selection != null) {
       this._combine_selection_to_left(from.selection);
     }
-    return delta;
+    return undos;
   };
 
   YSelections.prototype._removeFromCompositionValue = function(sel) {
@@ -359,14 +382,14 @@ YSelections = (function() {
     }
   };
 
-  YSelections.prototype.select = function(from, to, attrs) {
+  YSelections.prototype.select = function(from, to, attrs, overwrite) {
     var a, delta, delta_operations, length;
     length = 0;
     for (a in attrs) {
       length++;
       break;
     }
-    if (length <= 0) {
+    if (length <= 0 && !((overwrite != null) && overwrite)) {
       return;
     }
     delta_operations = {
@@ -377,7 +400,14 @@ YSelections = (function() {
       attrs: attrs,
       type: "select"
     };
+    if ((overwrite != null) && overwrite) {
+      delta.overwrite = true;
+    }
     return this._model.applyDelta(delta, delta_operations);
+  };
+
+  YSelections.prototype.unselectAll = function(from, to) {
+    return select(from, to, {}, true);
   };
 
   YSelections.prototype.unselect = function(from, to, attrs) {
