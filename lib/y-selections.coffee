@@ -1,4 +1,3 @@
-
 # compare two object for equality (no deep check!)
 compare_objects = (obj1, obj2, doAgain=true)->
   for key, value of obj1
@@ -89,12 +88,15 @@ class YSelections
                 sel = ref.selection
                 # delete it, because ref is going to get deleted!
                 delete ref.selection
+                # if the selection is 0-length
                 if sel.from is ref and sel.to is ref
                   @_removeFromCompositionValue sel
+                # if the selection started here, move it to next element
                 else if sel.from is ref
                   next = ref.getNext()
                   sel.from = next
                   next.selection = sel
+                # if the selection ends here, move it to previous element
                 else if sel.to is ref
                   prev = ref.getPrev()
                   sel.to = prev
@@ -115,6 +117,7 @@ class YSelections
     for listener in @_listeners
       listener.call this, observer_call
 
+    # create a new selection and add it to the stack of composition values
     createSelection = (from, to, attrs)=>
       new_attrs = {}
       for key,value of attrs
@@ -126,7 +129,9 @@ class YSelections
       @_composition_value.push new_sel
       new_sel
 
+    # is extend the right name?
     extendSelection = (selection)->
+      # remove the attributes from the selection
       if delta.type is "unselect"
         undo_attrs = {}
         for key in delta.attrs
@@ -160,10 +165,12 @@ class YSelections
           if selection.attrs[key]?
             undo_attrs[key] = selection.attrs[key]
             undo_need_select = true
+          # if key not already defined reversing it is like unselecting it
           else
             undo_attrs_list.push key
             undo_need_unselect = true
           selection.attrs[key] = value
+        # push all the undos to $undos
         if undo_need_select
           undos.push
             from:  selection.from
@@ -180,7 +187,7 @@ class YSelections
     # Algorithm overview:
     # 1. cut off the selection that intersects with from
     # 2. cut off the selection that intersects with to
-    # 3. extend / add selections inbetween
+    # 3. extend / add selections in between
     #
     #### 1. cut off the selection that intersects with from
     #
@@ -363,6 +370,7 @@ class YSelections
       # there is no selection to the left
       return
     else
+      # if they have the sames attributes, merge them
       if compare_objects(first_o.selection.attrs, sel.attrs)
         # we are going to remove the left selection
         # First, remove every trace of first_o.selection (save what is necessary)
@@ -371,9 +379,11 @@ class YSelections
         new_from = first_o.selection.from
         @_removeFromCompositionValue first_o.selection
 
+        # delete old selection
         if sel.from isnt sel.to
           delete sel.from.selection
 
+        # bind new selection
         sel.from = new_from
         new_from.selection = sel
       else
@@ -453,12 +463,14 @@ class YSelections
         element = element.next_cl
         continue
       if element.selection?
+        # if a selection starts here, save the start position
         if element.selection.from is element
           if sel_start?
             throw new Error "Found two consecutive from elements. The selections
               are no longer safe to use! (contact the owner of the repository)"
           else
             sel_start = pos
+        # if a selection ends here, add it to return value
         if element.selection.to is element
           if sel_start?
             number_of_attrs = 0
@@ -473,7 +485,7 @@ class YSelections
           else
             throw new Error "Found two consecutive to elements. The selections 
               are no longer safe to use! (contact the owner of the repository)"
-          throw new Error "This reference should not point to this selection, because the selection does not point to the reference. The selections are no longer safe to use! (contact the owner of the repository)"
+        # can it happen since we checked that element.Selection.from is element
         else if element.selection.from isnt element
           throw new Error "This reference should not point to this selection,
             because the selection does not point to the reference. The
