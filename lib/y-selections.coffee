@@ -186,9 +186,9 @@ class YSelections
         # does not intersect, because the start is already selected
         return
       # find first selection to the left
-      o = from.prev_cl
+      o = from.getPrev()
       while (not o.selection?) and (o.type isnt "Delimiter")
-        o = o.prev_cl
+        o = o.getPrev()
       if (not o.selection?) or o.selection.to is o
         # no intersection
         return
@@ -212,7 +212,7 @@ class YSelections
       # ** if $old_selection.to: intersection with $to!
       o = from
       while (o isnt old_selection.to) and (o isnt to)
-        o = o.next_cl
+        o = o.getNext()
 
       if o is old_selection.to
         # no intersection with to!
@@ -220,7 +220,7 @@ class YSelections
         new_selection = createSelection from, old_selection.to, old_selection.attrs
 
         # update references
-        old_selection.to = from.prev_cl
+        old_selection.to = from.getPrev()
         # update references (pointers to respective selections)
         old_selection.to.selection = old_selection
 
@@ -233,10 +233,10 @@ class YSelections
         new_selection = createSelection from, to, old_selection.attrs
 
         # create $opt_selection
-        opt_selection = createSelection to.next_cl, old_selection.to, old_selection.attrs
+        opt_selection = createSelection to.getNext(), old_selection.to, old_selection.attrs
 
         # update references
-        old_selection.to = from.prev_cl
+        old_selection.to = from.getPrev()
         # update references (pointers to respective selections)
         old_selection.to.selection = old_selection
 
@@ -258,7 +258,7 @@ class YSelections
       # find first selection to the left
       o = to
       while (not o.selection?) and (o isnt from)
-        o = o.prev_cl
+        o = o.getPrev()
       if (not o.selection?) or o.selection["to"] is o
         # no intersection
         return
@@ -275,7 +275,7 @@ class YSelections
       old_selection = o.selection
 
       # create $new_selection
-      new_selection = createSelection to.next_cl, old_selection.to, old_selection.attrs
+      new_selection = createSelection to.getNext(), old_selection.to, old_selection.attrs
 
       # update references
       old_selection.to = to
@@ -287,16 +287,21 @@ class YSelections
 
     cut_off_to()
 
+    delta_has_attrs = false
+    for a of delta.attrs
+      delta_has_attrs = true
+      break
     # 3. extend / add selections in between
     o = from
-    while (o isnt to.next_cl)
+    to_next = to.getNext()
+    while (o isnt to_next)
       if o.selection?
         # just extend the existing selection
         extendSelection o.selection, delta # will push undo-deltas to $undos
         selection = o.selection
         @_combine_selection_to_left selection
 
-        o = selection.to.next_cl
+        o = selection.to.getNext()
         selection_is_empty = true
         for attr of selection.attrs
           selection_is_empty = false
@@ -306,10 +311,12 @@ class YSelections
       else
         # create a new selection (until you find the next one)
         start = o
-        while (not o.next_cl.selection?) and (o isnt to)
-          o = o.next_cl
+        o_next = o.getNext()
+        while (not o_next.selection?) and (o isnt to)
+          o = o_next
+          o_next = o.getNext()
         end = o
-        if delta.type isnt "unselect"
+        if delta.type isnt "unselect" and delta_has_attrs
           attr_list = []
           for n,v of delta.attrs
             attr_list.push n
@@ -322,13 +329,10 @@ class YSelections
           start.selection = selection
           end.selection = selection
           @_combine_selection_to_left o.selection
-        o = o.next_cl
+        o = o.getNext()
 
-    # find the next selection
-    while o.isDeleted() and (not o.selection?)
-      o = o.next_cl
-    # and check if you can combine it
     if o.selection?
+      # and check if you can combine o.selection
       @_combine_selection_to_left o.selection
     # also re-connect from
     if from.selection?
@@ -345,11 +349,8 @@ class YSelections
 
   # try to combine a selection, to the selection to its left (if there is any)
   _combine_selection_to_left: (sel)->
-    first_o = sel.from.prev_cl
-    # find the first selection to the left
-    while first_o? and first_o.isDeleted() and not first_o.selection?
-      first_o = first_o.prev_cl
-    if not (first_o? and first_o.selection?)
+    first_o = sel.from.getPrev()
+    if not first_o.selection?
       # there is no selection to the left
       return
     else
@@ -435,7 +436,7 @@ class YSelections
     while o.next_cl?
       if o.isDeleted()
         if o.selection?
-          throw new Error "You forgot to delete the selection from this operation! y-selections is no longer safe to use!"
+          console.log "You forgot to delete the selection from this operation! Please write an issue how to reproduce this bug! (it could lead to inconsistencies!)"
         o = o.next_cl
         continue
       if o.selection?
@@ -450,12 +451,10 @@ class YSelections
             attrs = {}
             for n,v of o.selection.attrs
               attrs[n] = v
-              number_of_attrs++
-            if number_of_attrs > 0
-              result.push
-                from: sel_start
-                to: pos
-                attrs: attrs
+            result.push
+              from: sel_start
+              to: pos
+              attrs: attrs
             sel_start = null
           else
             throw new Error "Found two consecutive to elements. The selections are no longer safe to use! (contact the owner of the repository)"
