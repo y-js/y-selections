@@ -1,8 +1,8 @@
 {
   "name": "y-selections",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Selections Type for Yjs",
-  "main": "y-selections.js",
+  "main": "build/node/y-selections.js",
   "directories": {
     "example": "examples",
     "test": "test"
