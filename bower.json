@@ -1,0 +1,32 @@
+{
+  "name": "y-selections",
+  "version": "0.5.1",
+  "homepage": "http://y-js.org",
+  "authors": [
+    "Kevin Jahns <kevin.jahns@rwth-aachen.de>"
+  ],
+  "description": "Selections type for Yjs",
+  "main": [
+    "./y-selections.js",
+    "./build/node/y-selections.js"
+  ],
+  "keywords": [
+    "OT",
+    "collaboration",
+    "synchronization",
+    "ShareJS",
+    "Coweb",
+    "concurrency"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "node_modules",
+    "bower_components",
+    "test",
+    "extras",
+    "test"
+  ],
+  "devDependencies": {
+    "y-test" : "y-test#~0.4.0"
+  }
+}
