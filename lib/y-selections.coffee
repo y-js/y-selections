@@ -75,7 +75,7 @@ class YSelections
       parent = from.getParent()
       parent_exists = false
       for p in @_lists
-        if parent is @_lists[p]
+        if parent is p
           parent_exists = true
           break
       if not parent_exists

@@ -92,7 +92,7 @@ YSelections = (function() {
       ref1 = this._lists;
       for (j = 0, len = ref1.length; j < len; j++) {
         p = ref1[j];
-        if (parent === this._lists[p]) {
+        if (parent === p) {
           parent_exists = true;
           break;
         }
